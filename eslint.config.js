@@ -4,8 +4,8 @@ const globals = require("globals");
 const prettier = require("eslint-config-prettier");
 const jsx = require("./eslint-jsx");
 
-// `atom` is provided by the Lumine runtime, not resolvable from this manifest.
-const runtimeModules = ["atom"];
+// `lumine` is provided by the Lumine runtime, not resolvable from this manifest.
+const runtimeModules = ["lumine"];
 
 module.exports = [
   {
@@ -30,7 +30,7 @@ module.exports = [
       globals: {
         ...globals.browser,
         ...globals.node,
-        atom: "readonly",
+        lumine: "readonly",
       },
     },
     plugins: { jsx },

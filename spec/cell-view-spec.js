@@ -53,7 +53,7 @@ describe("cell view", () => {
     expect(view.element.classList.contains("jupyter-cell-code")).toBe(true);
     expect(view.editor).toBeTruthy();
     expect(view.editor.getText()).toBe("print('hi')");
-    expect(view.element.querySelector("atom-text-editor.jupyter-cell-editor")).toBeTruthy();
+    expect(view.element.querySelector("lumine-text-editor.jupyter-cell-editor")).toBeTruthy();
   });
 
   it("renders markdown instead of an editor when it is not being edited", () => {

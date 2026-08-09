@@ -1,9 +1,9 @@
 {
   // `alt-j` is the Jupyter family's chord prefix. ctrl-shift-n is core's
-  // application:new-window, bound at body; this sits at atom-workspace, which
+  // application:new-window, bound at body; this sits at lumine-workspace, which
   // is deeper, and DOM proximity outranks everything — so it took the keystroke
   // and there was no way to open a new window while this package was active.
-  "atom-workspace": {
+  "lumine-workspace": {
     "alt-j n": "jupyter-view:new-notebook"
   },
 
@@ -55,7 +55,7 @@
     "ctrl-shift-d": "jupyter-view:duplicate-cell"
   },
 
-  ".jupyter-notebook.edit-mode atom-text-editor": {
+  ".jupyter-notebook.edit-mode lumine-text-editor": {
     "ctrl-enter": "jupyter-repl:run-cell",
     "shift-enter": "jupyter-repl:run-cell-and-move-down",
     "alt-shift-enter": "jupyter-view:insert-cell-below-and-edit",
@@ -85,7 +85,7 @@
     "cmdorctrl-k down": "pane:split-down-and-copy-active-item"
   },
 
-  ".jupyter-notebook atom-text-editor": {
+  ".jupyter-notebook lumine-text-editor": {
     "ctrl-enter": "jupyter-repl:run-cell",
     "shift-enter": "jupyter-repl:run-cell-and-move-down",
     "alt-shift-enter": "jupyter-view:insert-cell-below-and-edit"

@@ -4,7 +4,7 @@
  */
 
 const etch = require("@lumine-code/etch");
-const { CompositeDisposable, Disposable } = require("atom");
+const { CompositeDisposable, Disposable } = require("lumine");
 const CellView = require("./cell-view");
 const { getNotebookLanguage } = require("./notebook-language");
 
@@ -34,13 +34,13 @@ class NotebookView {
     this.element.addEventListener("click", this.handleClick.bind(this));
 
     // Watch for scrollPastEnd setting changes
-    this._scrollPastEndDisposable = atom.config.onDidChange("editor.scrollPastEnd", () => {
+    this._scrollPastEndDisposable = lumine.config.onDidChange("editor.scrollPastEnd", () => {
       this.applyScrollPastEnd();
     });
 
     // Watch for container resize to update scroll past end padding
     this._resizeObserver = new ResizeObserver(() => {
-      if (atom.config.get("editor.scrollPastEnd")) {
+      if (lumine.config.get("editor.scrollPastEnd")) {
         this.applyScrollPastEnd();
       }
     });
@@ -103,7 +103,7 @@ class NotebookView {
     event.preventDefault();
     event.stopPropagation();
     this.activatePane();
-    atom.commands.dispatch(this.element, command);
+    lumine.commands.dispatch(this.element, command);
   };
 
   callEditor = (method) => () => {
@@ -296,7 +296,7 @@ class NotebookView {
   addTooltip(element, options) {
     if (!element || this._tooltipTargets.has(element)) return;
     this._tooltipTargets.add(element);
-    this._tooltips.add(atom.tooltips.add(element, options));
+    this._tooltips.add(lumine.tooltips.add(element, options));
   }
 
   setupDragAutoScroll() {
@@ -382,7 +382,7 @@ class NotebookView {
   applyScrollPastEnd() {
     if (!this.cellsContainer) return;
 
-    const scrollPastEnd = atom.config.get("editor.scrollPastEnd");
+    const scrollPastEnd = lumine.config.get("editor.scrollPastEnd");
     if (scrollPastEnd) {
       // Add padding-bottom equal to the container's height minus some minimal space
       // This allows scrolling the last cell to near the top of the viewport
@@ -473,7 +473,7 @@ class NotebookView {
   activatePane() {
     const { editor } = this.props;
     if (editor) {
-      const pane = atom.workspace.paneForItem(editor);
+      const pane = lumine.workspace.paneForItem(editor);
       if (pane && !pane.isActive()) {
         pane.activate();
       }
@@ -491,7 +491,7 @@ class NotebookView {
     if (this._skipFocusModeChange) return;
 
     // Check if focus went to an editor inside a cell
-    const isEditor = event.target.closest("atom-text-editor");
+    const isEditor = event.target.closest("lumine-text-editor");
     const isInCell = event.target.closest(".jupyter-cell");
 
     if (isEditor && isInCell) {
@@ -512,7 +512,7 @@ class NotebookView {
       if (!this.element.contains(document.activeElement)) {
         // Focus left the notebook - hide selections
         this._hideSelectionClasses();
-      } else if (!document.activeElement.closest("atom-text-editor")) {
+      } else if (!document.activeElement.closest("lumine-text-editor")) {
         // Focus is in notebook but not in an editor
         this.setMode("command");
       }
@@ -529,7 +529,7 @@ class NotebookView {
     }
 
     // Clicking on a cell but not in the editor should enter command mode
-    const isEditor = event.target.closest("atom-text-editor");
+    const isEditor = event.target.closest("lumine-text-editor");
     const isCell = event.target.closest(".jupyter-cell");
 
     if (isCell && !isEditor) {
@@ -812,18 +812,18 @@ class NotebookView {
 
   scrollUp() {
     if (!this.cellsContainer) return;
-    const scrollPos = atom.config.get("jupyter-view.notebook.scrollPos") ?? 1;
+    const scrollPos = lumine.config.get("jupyter-view.notebook.scrollPos") ?? 1;
     this._smoothScrollBy(-this.cellsContainer.offsetHeight * scrollPos);
   }
 
   scrollDown() {
     if (!this.cellsContainer) return;
-    const scrollPos = atom.config.get("jupyter-view.notebook.scrollPos") ?? 1;
+    const scrollPos = lumine.config.get("jupyter-view.notebook.scrollPos") ?? 1;
     this._smoothScrollBy(+this.cellsContainer.offsetHeight * scrollPos);
   }
 
   _smoothScrollBy(deltaY) {
-    const scrollDiv = atom.config.get("jupyter-view.notebook.scrollDiv") ?? 20;
+    const scrollDiv = lumine.config.get("jupyter-view.notebook.scrollDiv") ?? 20;
     this._pendingScrollY = deltaY + (scrollDiv - 1) * Math.sign(deltaY);
     if (this._scrollAnimId) return;
     const animate = () => {
@@ -832,7 +832,7 @@ class NotebookView {
         this._scrollAnimId = null;
         return;
       }
-      const div = atom.config.get("jupyter-view.notebook.scrollDiv") ?? 20;
+      const div = lumine.config.get("jupyter-view.notebook.scrollDiv") ?? 20;
       const step = Math.trunc(this._pendingScrollY / div);
       if (step !== 0) {
         container.scrollTop += step;

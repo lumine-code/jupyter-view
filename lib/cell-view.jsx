@@ -4,7 +4,7 @@
  */
 
 const etch = require("@lumine-code/etch");
-const { CompositeDisposable } = require("atom");
+const { CompositeDisposable } = require("lumine");
 const OutputView = require("./output-view");
 const { renderMarkdown } = require("./markdown");
 const { getGrammarForLanguage, getGrammarScopesForLanguage } = require("./notebook-language");
@@ -40,7 +40,7 @@ class EditorHost {
   }
 
   render() {
-    const max = atom.config.get("jupyter-view.input.maxHeight");
+    const max = lumine.config.get("jupyter-view.input.maxHeight");
     const style = max > 0 ? { maxHeight: `${max}px`, overflowY: "auto" } : {};
     return <div className="cell-editor-container" style={style} />;
   }
@@ -84,10 +84,10 @@ class CellView {
     // about it once it exists.
     etch.updateSync(this);
 
-    this._maxInputHeightDisposable = atom.config.observe("jupyter-view.input.maxHeight", () => {
+    this._maxInputHeightDisposable = lumine.config.observe("jupyter-view.input.maxHeight", () => {
       etch.update(this);
     });
-    this._maxOutputHeightDisposable = atom.config.observe("jupyter-view.output.maxHeight", () => {
+    this._maxOutputHeightDisposable = lumine.config.observe("jupyter-view.output.maxHeight", () => {
       etch.update(this);
     });
   }
@@ -141,7 +141,7 @@ class CellView {
 
   handleClick = (event) => {
     // Clicks inside the editor mean editing, not selecting.
-    if (event.target.closest("atom-text-editor")) return;
+    if (event.target.closest("lumine-text-editor")) return;
     if (this.props.onCellSelect) this.props.onCellSelect(event);
   };
 
@@ -150,7 +150,7 @@ class CellView {
     const { editor, index } = this.props;
     if (!editor) return;
     editor.setActiveCell(index);
-    atom.commands.dispatch(editor.view?.element || this.element, "jupyter-repl:run-cell");
+    lumine.commands.dispatch(editor.view?.element || this.element, "jupyter-repl:run-cell");
   };
 
   clearOutput = (event) => {
@@ -255,7 +255,7 @@ class CellView {
               <OutputView
                 ref="outputView"
                 outputs={outputs}
-                maxHeight={atom.config.get("jupyter-view.output.maxHeight")}
+                maxHeight={lumine.config.get("jupyter-view.output.maxHeight")}
               />
             </div>
           ) : null}
@@ -285,7 +285,7 @@ class CellView {
   addTooltip(element, options) {
     if (!element || this._tooltipTargets.has(element)) return;
     this._tooltipTargets.add(element);
-    this._tooltips.add(atom.tooltips.add(element, options));
+    this._tooltips.add(lumine.tooltips.add(element, options));
   }
 
   get outputView() {
@@ -308,7 +308,7 @@ class CellView {
     if (this.editor && this.editorElement) return;
 
     // Create a text editor
-    this.editor = atom.workspace.buildTextEditor({
+    this.editor = lumine.workspace.buildTextEditor({
       mini: false,
       lineNumberGutterVisible: true,
       autoHeight: true,
@@ -320,14 +320,14 @@ class CellView {
     this.applyGrammar();
 
     // Get the editor element
-    this.editorElement = atom.views.getView(this.editor);
+    this.editorElement = lumine.views.getView(this.editor);
     this.editorElement.classList.add("jupyter-cell-editor");
 
     // Register with Lumine's global text editor registry so packages
-    // (linters, formatters, etc.) and atom.textEditors.observe() see this
+    // (linters, formatters, etc.) and lumine.textEditors.observe() see this
     // editor. The "fragment" role marks it as a piece of the notebook, so
     // autocomplete shares words across cells and open documents.
-    this.editorRegistryDisposable = atom.textEditors.add(this.editor, { role: "fragment" });
+    this.editorRegistryDisposable = lumine.textEditors.add(this.editor, { role: "fragment" });
 
     // Cell editors aren't workspace pane items, so autocomplete has to be
     // asked to watch them explicitly (cleaned up on editor destroy)
@@ -618,7 +618,7 @@ class CellView {
 
     if (!grammar && targetScopes) {
       for (const scope of targetScopes) {
-        grammar = atom.grammars.grammarForScopeName(scope);
+        grammar = lumine.grammars.grammarForScopeName(scope);
         if (grammar) break;
       }
     }
@@ -629,7 +629,7 @@ class CellView {
       // Grammar not found - might not be loaded yet during restore
       // Schedule a retry after grammars are loaded
       this._grammarRetryScheduled = true;
-      const disposable = atom.grammars.onDidAddGrammar(() => {
+      const disposable = lumine.grammars.onDidAddGrammar(() => {
         disposable.dispose();
         this._grammarRetryScheduled = false;
         this.applyGrammar();
@@ -719,7 +719,7 @@ class CellView {
           const model = editorView.getModel();
           if (model) {
             // This triggers the cursor to appear
-            atom.views.getView(atom.workspace).focus();
+            lumine.views.getView(lumine.workspace).focus();
             this.editorElement.focus({ preventScroll: true });
           }
         }

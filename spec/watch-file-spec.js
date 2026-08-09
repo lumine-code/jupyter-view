@@ -1,9 +1,9 @@
-const { watchFile } = require("atom");
+const { watchFile } = require("lumine");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
-// NotebookDocument used the removed synchronous atom File API to watch the
+// NotebookDocument used the removed synchronous lumine File API to watch the
 // backing .ipynb (and to read/write it). Lumine replaced File with the async
 // watchFile (reads/writes now go through fs). These specs pin the parts of the
 // watchFile contract the document relies on. The handle exposes its emitter so
@@ -27,7 +27,7 @@ describe("watchFile (notebook document watcher migration)", () => {
     fs.rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
   });
 
-  it("is exported from the atom module as a function", () => {
+  it("is exported from the lumine module as a function", () => {
     expect(typeof watchFile).toBe("function");
   });
 

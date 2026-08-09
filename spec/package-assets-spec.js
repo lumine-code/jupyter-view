@@ -25,7 +25,7 @@ describe("jupyter-view package assets", () => {
     expect(keymap[".jupyter-notebook"]).toBeDefined();
     // alt-j is the Jupyter family's chord prefix. ctrl-shift-n is core's
     // application:new-window and this binding, being deeper, took it.
-    expect(keymap["atom-workspace"]["alt-j n"]).toBe("jupyter-view:new-notebook");
+    expect(keymap["lumine-workspace"]["alt-j n"]).toBe("jupyter-view:new-notebook");
     // The run bindings delegate to jupyter-repl (the execution engine).
     expect(keymap[".jupyter-notebook"]["ctrl-enter"]).toBe("jupyter-repl:run-cell");
 

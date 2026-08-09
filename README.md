@@ -20,7 +20,7 @@ To install `jupyter-view` search for _jupyter-view_ in the Install pane of the L
 
 ## Commands
 
-Commands available in `atom-workspace`:
+Commands available in `lumine-workspace`:
 
 - `jupyter-view:toggle`: toggle the active notebook item,
 - `jupyter-view:new-notebook`: create a new notebook,

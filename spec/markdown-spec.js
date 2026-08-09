@@ -1,7 +1,7 @@
 const { escapeHtml, renderMarkdown } = require("../lib/markdown");
 
 // Notebook markdown cells and `text/markdown` outputs go through Lumine's
-// bundled markdown-it renderer on `atom.tools.markdown`, so these specs pin the
+// bundled markdown-it renderer on `lumine.tools.markdown`, so these specs pin the
 // contract this package depends on: real markdown, sanitized, and no rewriting
 // of the notebook's own links.
 describe("markdown rendering", () => {
