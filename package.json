@@ -35,6 +35,7 @@
   ],
   "scripts": {
     "test": "lumine --test spec",
+    "benchmark:source": "lumine --test benchmark",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

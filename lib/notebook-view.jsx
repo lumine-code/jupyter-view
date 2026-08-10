@@ -404,6 +404,20 @@ class NotebookView {
     return etch.update(this);
   }
 
+  updateCells(cellIds) {
+    const cells = this.props.cells || [];
+    const notebookLanguage = getNotebookLanguage(this.props.editor?.document?.metadata || {});
+    const indexes = new Map(cells.map((cell, index) => [cell.id, index]));
+    const updates = [];
+    for (const cellId of new Set(cellIds || [])) {
+      const index = indexes.get(cellId);
+      const cellView = this.cellViews.get(cellId);
+      if (index === undefined || !cellView) continue;
+      updates.push(cellView.update(this.cellProps(cells[index], index, cells, notebookLanguage)));
+    }
+    return Promise.all(updates);
+  }
+
   onDidScroll(callback) {
     this.scrollCallbacks.add(callback);
     return new Disposable(() => {
