@@ -624,7 +624,11 @@ class CellView {
     }
 
     if (grammar) {
-      this.editor.setGrammar(grammar);
+      // Register the scope as a language override instead of installing the
+      // currently available grammar object directly. The registry can then
+      // replace a TextMate fallback with the preferred Tree-sitter grammar
+      // when language packages finish loading during workspace restoration.
+      lumine.grammars.assignLanguageMode(this.editor.getBuffer(), grammar.scopeName);
     } else if (targetScopes && !this._grammarRetryScheduled) {
       // Grammar not found - might not be loaded yet during restore
       // Schedule a retry after grammars are loaded

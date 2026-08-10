@@ -56,6 +56,32 @@ describe("cell view", () => {
     expect(view.element.querySelector("lumine-text-editor.jupyter-cell-editor")).toBeTruthy();
   });
 
+  it("upgrades a TextMate fallback when the Tree-sitter grammar loads later", async () => {
+    await lumine.packages.activatePackage("language-python");
+    const grammars = lumine.grammars.getGrammars({ includeTreeSitter: true });
+    const treeSitter = grammars.find(
+      (grammar) => grammar.scopeName === "source.python.ipy" && grammar.type === "tree-sitter",
+    );
+    const textMate = grammars.find(
+      (grammar) => grammar.scopeName === "source.python.ipy" && grammar.type !== "tree-sitter",
+    );
+    expect(treeSitter).toBeDefined();
+    expect(textMate).toBeDefined();
+
+    lumine.grammars.removeGrammar(treeSitter);
+    try {
+      view = mount(makeCell());
+      expect(view.editor.getGrammar()).toBe(textMate);
+
+      lumine.grammars.addGrammar(treeSitter);
+      expect(view.editor.getGrammar()).toBe(treeSitter);
+    } finally {
+      if (!lumine.grammars.getGrammars({ includeTreeSitter: true }).includes(treeSitter)) {
+        lumine.grammars.addGrammar(treeSitter);
+      }
+    }
+  });
+
   it("renders markdown instead of an editor when it is not being edited", () => {
     view = mount(makeCell({ type: "markdown", source: "# Head" }));
 

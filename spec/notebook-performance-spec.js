@@ -1,6 +1,10 @@
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
 const NotebookDocument = require("../lib/notebook-document");
 const NotebookDocumentRegistry = require("../lib/notebook-document-registry");
 const JupyterNotebookEditor = require("../lib/jupyter-notebook-editor");
+const main = require("../lib/main");
 
 describe("notebook change tracking", () => {
   let documents = [];
@@ -92,6 +96,41 @@ describe("notebook change tracking", () => {
     expect(first.sourceController.scheduleSnapshot).toHaveBeenCalledTimes(1);
   });
 
+  it("projects one cell diagnostic onto every split cell buffer", async () => {
+    const document = await buildDocument();
+    const first = new JupyterNotebookEditor(document);
+    const second = new JupyterNotebookEditor(document);
+    editors.push(first, second);
+    await Promise.all([first._sourceEditorSetupPromise, second._sourceEditorSetupPromise]);
+    const sourceBuffer = first.getSourceEditor().getBuffer();
+    const diagnostic = {
+      location: {
+        buffer: sourceBuffer,
+        cell: 1,
+        position: [
+          [0, 0],
+          [0, 1],
+        ],
+      },
+    };
+    const previousEditors = main.notebookEditors;
+    main.notebookEditors = new Set([first, second]);
+
+    try {
+      const locations = main.provideLinterAdapter().getMarkerLocationsForMessage(diagnostic);
+
+      expect(locations.length).toBe(2);
+      expect(locations.map((location) => location.buffer)).toEqual([
+        first.getCellEditor(1).getBuffer(),
+        second.getCellEditor(1).getBuffer(),
+      ]);
+      expect(locations.map((location) => location.cell)).toEqual([1, 1]);
+      expect(diagnostic.location.buffer).toBe(sourceBuffer);
+    } finally {
+      main.notebookEditors = previousEditors;
+    }
+  });
+
   it("serializes a document and its source history once regardless of split count", async () => {
     const registry = new NotebookDocumentRegistry();
     const document = await registry.createUntitledDocument();
@@ -145,6 +184,72 @@ describe("notebook change tracking", () => {
     first.destroy();
     second.destroy();
     restoredRegistry.destroy();
+  });
+
+  it("restores the source projection of a file-backed notebook", async () => {
+    const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "jupyter-view-source-"));
+    const filePath = path.join(tempDirectory, "restored-notebook.ipynb");
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        nbformat: 4,
+        nbformat_minor: 5,
+        metadata: {
+          kernelspec: { display_name: "Python 3", language: "python", name: "python3" },
+          language_info: { name: "python" },
+        },
+        cells: [
+          {
+            cell_type: "code",
+            id: "restored-cell",
+            metadata: {},
+            source: ["undefined_name\n"],
+            execution_count: null,
+            outputs: [],
+          },
+        ],
+      }),
+    );
+    const registry = new NotebookDocumentRegistry();
+    const document = await registry.getOrCreateDocument(filePath);
+    const editor = new JupyterNotebookEditor(document);
+    await editor._sourceEditorSetupPromise;
+    const sourceText = editor.getSourceEditor().getText();
+    const documentId = document.id;
+    const packageState = registry.serialize();
+
+    expect(packageState[documentId].notebookData).toBeNull();
+    expect(packageState[documentId].sourceControllerState.bufferState.filePath).toBeUndefined();
+    expect(packageState[documentId].sourceControllerState.bufferState.text).toBe(sourceText);
+
+    // State written by the previous implementation had history metadata but
+    // neither a file path nor text. The first restart after upgrading must
+    // recover directly from that state instead of requiring an edit and a
+    // second restart.
+    delete packageState[documentId].sourceControllerState.bufferState.text;
+
+    editor.destroy();
+    registry.destroy();
+
+    const addedJupyterGrammar = lumine.grammars.grammarForScopeName("source.jupyter")
+      ? null
+      : lumine.grammars.loadGrammarSync(require.resolve("../grammars/jupyter.json"));
+    const restoredRegistry = new NotebookDocumentRegistry(packageState);
+    const restoredDocument = await restoredRegistry.getOrCreateDocumentById(documentId);
+    const restoredEditor = new JupyterNotebookEditor(restoredDocument);
+    await restoredEditor._sourceEditorSetupPromise;
+    const restoredSourceEditor = restoredEditor.getSourceEditor();
+
+    expect(restoredSourceEditor.getText()).toBe(sourceText);
+    expect(restoredSourceEditor.getText()).toContain("undefined_name");
+    expect(restoredSourceEditor.getPath()).toBe(restoredDocument.filePath);
+    expect(restoredSourceEditor.getGrammar().scopeName).toBe("source.jupyter");
+    expect(lumine.textEditors.roleFor(restoredSourceEditor)).toBe("background");
+
+    restoredEditor.destroy();
+    restoredRegistry.destroy();
+    if (addedJupyterGrammar) lumine.grammars.removeGrammar(addedJupyterGrammar);
+    fs.rmSync(tempDirectory, { recursive: true, force: true });
   });
 });
 
