@@ -1,0 +1,72 @@
+const { consumeLinterEditors, addLinterEditor } = require("../lib/linter-editors");
+
+// The notebook's source editor is not a pane item, so the linter never
+// discovers it on its own; this holder hands it over through the
+// `linter.editors` service. Editors and the service arrive in either order,
+// and each side can go away first.
+describe("lib/linter-editors", () => {
+  let registrations;
+  let serviceDisposable;
+
+  const register = (editor) => {
+    const entry = { editor, disposed: false };
+    registrations.push(entry);
+    return {
+      dispose() {
+        entry.disposed = true;
+      },
+    };
+  };
+
+  const buildEditor = () => lumine.workspace.buildTextEditor();
+
+  beforeEach(() => {
+    registrations = [];
+    serviceDisposable = null;
+  });
+
+  afterEach(() => {
+    serviceDisposable?.dispose();
+  });
+
+  it("registers an editor added after the service connected", () => {
+    serviceDisposable = consumeLinterEditors(register);
+    const editor = buildEditor();
+
+    const added = addLinterEditor(editor);
+
+    expect(registrations.map((entry) => entry.editor)).toEqual([editor]);
+    added.dispose();
+    expect(registrations[0].disposed).toBe(true);
+    editor.destroy();
+  });
+
+  it("replays an editor added before the service connected", () => {
+    const editor = buildEditor();
+    const added = addLinterEditor(editor);
+    expect(registrations).toEqual([]);
+
+    serviceDisposable = consumeLinterEditors(register);
+
+    expect(registrations.map((entry) => entry.editor)).toEqual([editor]);
+    added.dispose();
+    editor.destroy();
+  });
+
+  it("drops its registrations when the service goes away, and replays on return", () => {
+    serviceDisposable = consumeLinterEditors(register);
+    const editor = buildEditor();
+    const added = addLinterEditor(editor);
+
+    serviceDisposable.dispose();
+    expect(registrations[0].disposed).toBe(true);
+
+    serviceDisposable = consumeLinterEditors(register);
+    expect(registrations.length).toBe(2);
+    expect(registrations[1].editor).toBe(editor);
+    expect(registrations[1].disposed).toBe(false);
+
+    added.dispose();
+    editor.destroy();
+  });
+});

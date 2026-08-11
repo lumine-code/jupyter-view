@@ -66,6 +66,11 @@
       "versions": {
         "^1.0.0": "consumeJupyterOutput"
       }
+    },
+    "linter.editors": {
+      "versions": {
+        "^1.0.0": "consumeLinterEditors"
+      }
     }
   },
   "providedServices": {
