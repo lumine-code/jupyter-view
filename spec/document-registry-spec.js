@@ -1,6 +1,6 @@
 const NotebookDocumentRegistry = require("../lib/notebook-document-registry");
 
-// The registry is observable so a consumer — ide-jupyter feeding notebooks to
+// The registry is observable so a consumer — the language-server bridge feeding notebooks to
 // language servers — can follow documents opening and closing instead of
 // polling. Registration precedes loading, so a document arrives live and fills
 // in through its own events.
