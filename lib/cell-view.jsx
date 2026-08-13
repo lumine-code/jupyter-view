@@ -7,7 +7,21 @@ const etch = require("@lumine-code/etch");
 const { CompositeDisposable } = require("lumine");
 const OutputView = require("./output-view");
 const { renderMarkdown } = require("./markdown");
-const { getGrammarForLanguage, getGrammarScopesForLanguage } = require("./notebook-language");
+const { getGrammarScopesForLanguage, languageIdForGrammar } = require("./notebook-language");
+
+// The cell's own language id, when a grammar was picked for it explicitly.
+// Read straight off the metadata so plain cell snapshots work too.
+function cellLanguageOf(cell) {
+  return cell?.metadata?.vscode?.languageId || null;
+}
+
+function resolveGrammar(targetScopes) {
+  for (const scope of targetScopes || []) {
+    const grammar = lumine.grammars.grammarForScopeName(scope);
+    if (grammar) return grammar;
+  }
+  return null;
+}
 
 // MIME type tagging the cell-reorder drag payload, so external file/text drops
 // (which carry a text/plain path) are ignored instead of failing JSON.parse.
@@ -71,7 +85,7 @@ class CellView {
     this.editor = null;
     this._lastKnownSource = props.cell ? props.cell.source : "";
     this._lastKnownType = props.cell ? props.cell.type : "code"; // Track cell type for change detection
-    this._lastKnownLanguage = props.notebookLanguage || null;
+    this._lastKnownLanguage = this.grammarLanguage();
     this._editorIsDirty = false; // Track if editor has unsaved changes
     this._updatingFromExternal = false; // Guard against feedback loops when syncing from other editors
     this._localChangeSourceRevision = null;
@@ -340,6 +354,13 @@ class CellView {
     // Cell editors aren't workspace pane items, so autocomplete has to be
     // asked to watch them explicitly (cleaned up on editor destroy)
     require("./autocomplete-watch").watchCellEditor(this.editor);
+
+    // A grammar assigned from outside — the grammar selector — becomes the
+    // cell's own language; applyGrammar's assignments are guarded off.
+    this.editorGrammarSubscription = this.editor.onDidChangeGrammar(() => {
+      if (this._applyingGrammar) return;
+      this.handleGrammarAssignment();
+    });
 
     // Scroll to cursor position on any cursor activity (typing, arrow keys, clicks)
     this.editorCursorSubscription = this.editor.onDidChangeCursorPosition(() => {
@@ -614,35 +635,47 @@ class CellView {
     }
   }
 
+  // The tracked value deciding when the grammar must be re-applied: the cell's
+  // own language when one was picked, the notebook's otherwise.
+  grammarLanguage() {
+    return cellLanguageOf(this.props.cell) || this.props.notebookLanguage || null;
+  }
+
+  // The scopes the cell's type and the notebook's language imply, ignoring any
+  // grammar picked for the cell itself. Raw cells imply none.
+  defaultGrammarTargets() {
+    const { cell } = this.props;
+    if (cell.type === "markdown") {
+      return ["source.gfm", "text.md", "text.md.basic"];
+    }
+    if (cell.type === "code") {
+      return getGrammarScopesForLanguage(this.props.notebookLanguage || "python");
+    }
+    return null;
+  }
+
   applyGrammar() {
     if (!this.editor) return;
 
-    const { cell } = this.props;
-    let grammar = null;
-    let targetScopes = null;
-
-    if (cell.type === "markdown") {
-      targetScopes = ["source.gfm", "text.md", "text.md.basic"];
-    } else if (cell.type === "code") {
-      const language = this.props.notebookLanguage || "python";
-      targetScopes = getGrammarScopesForLanguage(language);
-      grammar = getGrammarForLanguage(language);
-    }
-
-    if (!grammar && targetScopes) {
-      for (const scope of targetScopes) {
-        grammar = lumine.grammars.grammarForScopeName(scope);
-        if (grammar) break;
-      }
-    }
+    // A grammar picked for this cell outranks what its type implies.
+    const cellLanguage = cellLanguageOf(this.props.cell);
+    const targetScopes = cellLanguage
+      ? getGrammarScopesForLanguage(cellLanguage)
+      : this.defaultGrammarTargets();
+    const grammar = resolveGrammar(targetScopes);
 
     if (grammar) {
       // Register the scope as a language override instead of installing the
       // currently available grammar object directly. The registry can then
       // replace a TextMate fallback with the preferred Tree-sitter grammar
       // when language packages finish loading during workspace restoration.
-      lumine.grammars.assignLanguageMode(this.editor.getBuffer(), grammar.scopeName);
-    } else if (targetScopes && !this._grammarRetryScheduled) {
+      this._applyingGrammar = true;
+      try {
+        lumine.grammars.assignLanguageMode(this.editor.getBuffer(), grammar.scopeName);
+      } finally {
+        this._applyingGrammar = false;
+      }
+    } else if (targetScopes?.length && !this._grammarRetryScheduled) {
       // Grammar not found - might not be loaded yet during restore
       // Schedule a retry after grammars are loaded
       this._grammarRetryScheduled = true;
@@ -662,6 +695,33 @@ class CellView {
     }
   }
 
+  /**
+   * The grammar changed under us: the grammar selector (or a script) assigned
+   * one straight to the cell's editor. Record it on the cell so it survives
+   * editor rebuilds, reaches other views of the notebook, and is saved with
+   * the file; picking the cell's own default, or Auto Detect, clears it.
+   */
+  handleGrammarAssignment() {
+    if (!this.editor) return;
+
+    const assignedScope = lumine.grammars.getAssignedLanguageId(this.editor.getBuffer());
+    if (assignedScope == null) {
+      // Auto Detect: back to what the cell's type and the notebook imply.
+      this._lastKnownLanguage = this.props.notebookLanguage || null;
+      if (this.props.onLanguageChange) this.props.onLanguageChange(null);
+      this.applyGrammar();
+      return;
+    }
+
+    const defaultGrammar = resolveGrammar(this.defaultGrammarTargets());
+    const languageId =
+      assignedScope === defaultGrammar?.scopeName
+        ? null
+        : languageIdForGrammar(this.editor.getGrammar());
+    this._lastKnownLanguage = languageId || this.props.notebookLanguage || null;
+    if (this.props.onLanguageChange) this.props.onLanguageChange(languageId);
+  }
+
   update(props) {
     const oldProps = this.props;
     this.props = { ...this.props, ...props };
@@ -677,7 +737,7 @@ class CellView {
       this.destroyEditor();
       this._lastKnownSource = props.cell ? props.cell.source : "";
       this._lastKnownType = props.cell ? props.cell.type : "code";
-      this._lastKnownLanguage = props.notebookLanguage || null;
+      this._lastKnownLanguage = this.grammarLanguage();
       this._editorIsDirty = false;
       this._localChangeSourceRevision = null;
       this.setupEditor();
@@ -700,8 +760,9 @@ class CellView {
       this._lastKnownSource = props.cell.source;
     }
 
-    if (this.editor && props.notebookLanguage !== this._lastKnownLanguage) {
-      this._lastKnownLanguage = props.notebookLanguage || null;
+    const grammarLanguage = this.grammarLanguage();
+    if (this.editor && grammarLanguage !== this._lastKnownLanguage) {
+      this._lastKnownLanguage = grammarLanguage;
       this.applyGrammar();
     }
 
@@ -755,6 +816,10 @@ class CellView {
 
   destroyEditor() {
     const hadEditor = !!this.editor;
+    if (this.editorGrammarSubscription) {
+      this.editorGrammarSubscription.dispose();
+      this.editorGrammarSubscription = null;
+    }
     if (this.editorCursorSubscription) {
       this.editorCursorSubscription.dispose();
       this.editorCursorSubscription = null;

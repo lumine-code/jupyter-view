@@ -215,6 +215,7 @@ class NotebookView {
       onCellSelect: (event) => this.handleCellSelect(index, event),
       onFocus: () => editor && editor.setActiveCell(index),
       onSourceChange: (source) => editor && editor.updateCellSource(index, source),
+      onLanguageChange: (languageId) => editor && editor.setCellLanguage(index, languageId),
       onEnterEditMode: () => this.enterEditMode(),
       onEnterCommandMode: () => this.setMode("command"),
       onNavigateToPreviousCell: () => index > 0 && focusSibling(index - 1, true),

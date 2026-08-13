@@ -8,6 +8,7 @@ Open and edit Jupyter notebooks.
 - **Cell operations**: insert, delete, move, merge, cut, copy, paste, duplicate, change type, and reorder cells by drag and drop.
 - **Rich output**: render stored notebook outputs — text, images, SVG, HTML, LaTeX, markdown, plotly and vega, with ANSI color — through jupyter-repl's renderers.
 - **Multi-select and history**: anchor-based multi-cell selection and buffer-based undo/redo of notebook edits.
+- **Cell grammars**: pick a cell's grammar with the grammar selector; the choice is saved in the cell metadata VS Code reads, and auto detect returns the cell to the notebook's language.
 - **Execution integration**: run cells through the jupyter-repl kernel engine via the `jupyter.adapter` service, with per-cell run buttons and live execution status.
 - **Language servers**: feeds open notebooks to the language servers ide-client runs, so completions, hover, diagnostics, and navigation work inside cells with cross-cell context.
 - **Notebook search**: search and replace cell source through the search-panel package, entering edit mode on the matching cell.

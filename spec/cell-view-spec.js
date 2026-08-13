@@ -207,4 +207,81 @@ describe("cell view", () => {
 
     expect(editor.isDestroyed()).toBe(true);
   });
+
+  describe("cell grammar overrides", () => {
+    beforeEach(async () => {
+      await lumine.packages.activatePackage("language-python");
+      await lumine.packages.activatePackage("language-json");
+    });
+
+    const jsonGrammar = () => lumine.grammars.grammarForScopeName("source.json");
+
+    it("applies the cell's own language over the notebook's", () => {
+      view = mount(makeCell({ metadata: { vscode: { languageId: "json" } } }));
+      expect(view.editor.getGrammar().scopeName).toBe("source.json");
+    });
+
+    it("records a grammar assigned from outside as the cell's language", () => {
+      const onLanguageChange = jasmine.createSpy("onLanguageChange");
+      view = mount(makeCell(), { onLanguageChange });
+      expect(view.editor.getGrammar().scopeName).toBe("source.python.ipy");
+
+      // What the grammar selector does on confirm.
+      lumine.grammars.assignGrammar(view.editor, jsonGrammar());
+
+      expect(onLanguageChange).toHaveBeenCalledWith("json");
+      expect(view.editor.getGrammar().scopeName).toBe("source.json");
+    });
+
+    it("clears the cell's language when its default grammar is picked", () => {
+      const onLanguageChange = jasmine.createSpy("onLanguageChange");
+      view = mount(makeCell({ metadata: { vscode: { languageId: "json" } } }), {
+        onLanguageChange,
+      });
+      expect(view.editor.getGrammar().scopeName).toBe("source.json");
+
+      lumine.grammars.assignGrammar(
+        view.editor,
+        lumine.grammars.grammarForScopeName("source.python.ipy"),
+      );
+
+      expect(onLanguageChange).toHaveBeenCalledWith(null);
+    });
+
+    it("returns to the notebook grammar on Auto Detect", () => {
+      const cell = makeCell();
+      // Mimic the notebook pipeline: the callback lands in the cell metadata.
+      const onLanguageChange = jasmine.createSpy("onLanguageChange").and.callFake((languageId) => {
+        cell.metadata = languageId ? { vscode: { languageId } } : {};
+      });
+      view = mount(cell, { onLanguageChange });
+
+      lumine.grammars.assignGrammar(view.editor, jsonGrammar());
+      expect(view.editor.getGrammar().scopeName).toBe("source.json");
+
+      // What the grammar selector does on "Auto Detect".
+      lumine.textEditors.clearGrammarOverride(view.editor);
+
+      expect(onLanguageChange).toHaveBeenCalledWith(null);
+      expect(view.editor.getGrammar().scopeName).toBe("source.python.ipy");
+    });
+
+    it("keeps the picked grammar across a markdown render flip", () => {
+      const cell = makeCell({
+        type: "markdown",
+        source: "# Head",
+        metadata: { vscode: { languageId: "json" } },
+      });
+      view = mount(cell, { active: true, mode: "edit" });
+      expect(view.editor.getGrammar().scopeName).toBe("source.json");
+
+      view.update({ cell, active: true, mode: "command" });
+      flush(view);
+      expect(view.editor).toBe(null);
+
+      view.update({ cell, active: true, mode: "edit" });
+      flush(view);
+      expect(view.editor.getGrammar().scopeName).toBe("source.json");
+    });
+  });
 });
