@@ -75,7 +75,7 @@ Commands available in `.tree-view`:
 ## Services
 
 - **[jupyter.adapter](docs/jupyter.adapter.md)** (`1.0.0`): provided to let [jupyter-repl](https://github.com/lumine-code/jupyter-repl) execute notebook cells with its normal run commands, routing kernel output, execution counts, focus, and navigation back into the notebook.
-- **[jupyter.notebook](docs/jupyter.notebook.md)** (`1.0.0`): provided to expose notebook documents and the active notebook item to packages that need notebook-aware behavior.
+- **[jupyter.notebook](docs/jupyter.notebook.md)** (`1.1.0`): provided to expose notebook documents, their editors, and the active notebook item to packages that need notebook-aware behavior.
 - **search.adapter** (`1.0.0`): provided to let the search-panel package find and replace cell source in the active notebook.
 - **linter.adapter** (`1.0.0`): provided to map linter diagnostics from the backing editor onto the visible notebook cells.
 - **linter.ui** (`1.0.0`): provided to receive linter message updates so notebook scrollmap markers stay in sync with diagnostics.

@@ -76,7 +76,7 @@
   "providedServices": {
     "jupyter.notebook": {
       "versions": {
-        "1.0.0": "provideJupyterNotebook"
+        "1.1.0": "provideJupyterNotebook"
       }
     },
     "jupyter.adapter": {
