@@ -13,6 +13,7 @@ function fakeDocument({ filePath = null, cells = [] } = {}) {
     cells,
     emitter,
     onDidChange: (fn) => emitter.on("did-change", fn),
+    onDidLoad: (fn) => emitter.on("did-load", fn),
     onDidReload: (fn) => emitter.on("did-reload", fn),
     onDidSave: (fn) => emitter.on("did-save", fn),
     onDidChangePath: (fn) => emitter.on("did-change-path", fn),
@@ -24,14 +25,20 @@ function fakeClient() {
   const opened = [];
   return {
     opened,
+    adapters: [],
+    adaptersForNotebook() {
+      return this.adapters;
+    },
     openNotebookDocument(descriptor) {
       const bridge = {
         descriptor,
         updates: [],
         saves: 0,
         disposed: false,
+        attached: Promise.resolve(),
         updateCells(cells) {
           this.updates.push(cells);
+          return Promise.resolve();
         },
         didSave() {
           this.saves++;
@@ -167,6 +174,79 @@ describe("the language-server bridge", () => {
     expect(revealed).toEqual([{ index: 1, position: { row: 2, column: 4 } }]);
   });
 
+  it("syncs the cells a restored document loads after the bridge opened", async () => {
+    // A restored document registers before its async load completes; the
+    // bridge opens against an empty cell list and must hear the load.
+    const document = fakeDocument({ filePath: "C:\\proj\\nb.ipynb", cells: [] });
+    const host = fakeHost([document]);
+    const client = fakeClient();
+    manager = new LspBridgeManager(client, host);
+    const bridge = client.opened[0];
+    expect(bridge.descriptor.cells).toEqual([]);
+
+    document.cells = [{ id: "c1", type: "code", source: "import os\n" }];
+    document.emitter.emit("did-load");
+    await flushFrame();
+    expect(bridge.updates.length).toBe(1);
+    expect(bridge.updates[0].map((cell) => cell.text)).toEqual(["import os\n"]);
+  });
+
+  it("re-sends the cells when a cell editor's grammar resolves late", async () => {
+    const cells = [{ id: "c1", type: "code", source: "a\n" }];
+    const document = fakeDocument({ filePath: "C:\\proj\\nb.ipynb", cells });
+    const host = fakeHost([document]);
+    const grammarEmitter = new Emitter();
+    let scopeName = null;
+    const cellEditor = {
+      getGrammar: () => (scopeName ? { scopeName } : null),
+      onDidChangeGrammar: (fn) => grammarEmitter.on("did-change-grammar", fn),
+    };
+    host.getNotebookEditors = () => [
+      {
+        getCellEditorById: () => cellEditor,
+        onDidChangeCellEditors: () => ({ dispose() {} }),
+      },
+    ];
+    const client = fakeClient();
+    manager = new LspBridgeManager(client, host);
+    expect(client.opened[0].descriptor.cells[0].scopeName ?? null).toBeNull();
+
+    scopeName = "source.python.ipy";
+    grammarEmitter.emit("did-change-grammar");
+    await flushFrame();
+    expect(client.opened[0].updates.length).toBe(1);
+    expect(client.opened[0].updates[0][0].scopeName).toBe("source.python.ipy");
+  });
+
+  it("nudges the CLI linters only when the attach settles on a changed adapter set", async () => {
+    const document = fakeDocument({ filePath: "C:\\proj\\nb.ipynb", cells: [] });
+    const host = fakeHost([document]);
+    const client = fakeClient();
+    const lints = [];
+    spyOn(lumine.commands, "dispatch").and.callFake((target, name) => {
+      if (name === "linter:lint") lints.push(name);
+    });
+    manager = new LspBridgeManager(client, host);
+    await flushFrame();
+    await flushFrame();
+    const baseline = lints.length;
+
+    // An update whose attach leaves the adapter set unchanged lints nothing —
+    // this is every keystroke.
+    document.emitter.emit("did-change", { affectsSource: true });
+    await flushFrame();
+    await flushFrame();
+    expect(lints.length).toBe(baseline);
+
+    // The set changing — a server accepted the notebook — re-asks the CLI
+    // route, which is when linter-ruff's stand-down answer flips.
+    client.adapters = [{ id: "ide-ruff" }];
+    document.emitter.emit("did-change", { affectsSource: true });
+    await flushFrame();
+    await flushFrame();
+    expect(lints.length).toBe(baseline + 1);
+  });
+
   it("borrows a sibling's grammar scope for a cell whose editor is not built", () => {
     const cells = [
       { id: "c1", type: "code", source: "a\n" },
@@ -216,6 +296,40 @@ describe("the ide-client service consumption", () => {
     main.setupLspBridge();
     expect(main.lspBridgeManager).toBeDefined();
     disposable.dispose();
+  });
+
+  it("announces a restored editor to the bridge when its document attaches", () => {
+    // Deserialized pane items are tracked while their document is still null;
+    // the announcement has to wait for the attach or the bridge never joins
+    // the editor to its document.
+    class JupyterNotebookEditor {
+      constructor() {
+        this.emitter = new Emitter();
+        this.document = null;
+      }
+      onDidDestroy() {
+        return { dispose() {} };
+      }
+      onDidAttachDocument(fn) {
+        return this.emitter.on("did-attach-document", fn);
+      }
+    }
+    const editor = new JupyterNotebookEditor();
+    const tracked = [];
+    const previousEditors = main.notebookEditors;
+    const previousManager = main.lspBridgeManager;
+    main.notebookEditors = new Set();
+    main.lspBridgeManager = { editorTracked: (joined) => tracked.push(joined) };
+    try {
+      main.trackNotebookEditor(editor);
+      expect(tracked).toEqual([]);
+      editor.document = {};
+      editor.emitter.emit("did-attach-document", editor.document);
+      expect(tracked).toEqual([editor]);
+    } finally {
+      main.notebookEditors = previousEditors;
+      main.lspBridgeManager = previousManager;
+    }
   });
 
   it("opens a cell location by revealing the addressed cell", async () => {
