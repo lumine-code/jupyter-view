@@ -81,7 +81,7 @@ Commands available in `.tree-view`:
 - **linter.ui** (`1.0.0`): provided to receive linter message updates so notebook scrollmap markers stay in sync with diagnostics.
 - **navigation.adapter** (`1.0.0`): provided to show notebook markdown headings as a document outline, activating and revealing the cell on selection.
 - **autocomplete.watch-editor** (`^1.0.0`): consumed to keep autocomplete active in notebook cell editors.
-- **linter.editors** (`^1.0.0`): consumed to register the backing source editor for linting, since only pane items are linted on their own.
+- **linter.editors** (`^1.1.0`): consumed to register the backing source editor for linting, since only pane items are linted on their own, and each cell editor render-only so projected diagnostics draw inside the cells.
 - **jupyter.output** (`^1.0.0`): consumed to render stored outputs with jupyter-repl's renderers; without it a notebook falls back to text and images.
 - **tree-view.selection** (`^1.0.0`): consumed to add tree-view entries for opening a selected `.ipynb` as a notebook or as plain JSON source.
 - **scrollmap.widget** (`^1.0.0`): consumed to render notebook scrollmap markers in a standalone scrollbar widget.

@@ -69,7 +69,7 @@
     },
     "linter.editors": {
       "versions": {
-        "^1.0.0": "consumeLinterEditors"
+        "^1.1.0": "consumeLinterEditors"
       }
     }
   },

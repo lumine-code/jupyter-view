@@ -69,4 +69,25 @@ describe("lib/linter-editors", () => {
     added.dispose();
     editor.destroy();
   });
+
+  it("keeps an editor's registration options across a service reconnect", () => {
+    const options = [];
+    const registerWithOptions = (editor, opts) => {
+      options.push(opts);
+      return { dispose() {} };
+    };
+
+    const editor = buildEditor();
+    const added = addLinterEditor(editor, { lint: false });
+
+    serviceDisposable = consumeLinterEditors(registerWithOptions);
+    expect(options).toEqual([{ lint: false }]);
+
+    serviceDisposable.dispose();
+    serviceDisposable = consumeLinterEditors(registerWithOptions);
+    expect(options).toEqual([{ lint: false }, { lint: false }]);
+
+    added.dispose();
+    editor.destroy();
+  });
 });
