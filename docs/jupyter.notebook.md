@@ -9,7 +9,7 @@ Exposes the open notebook documents and the active one, for packages that need n
 | Consumed by | `consumeJupyterNotebook(notebooks)`                           |
 | Owner       | [`jupyter-view`](https://github.com/lumine-code/jupyter-view) |
 
-A package that needs to know a notebook is open — a language-server bridge, an exporter, an outline, a linter with notebook-specific rules — asks here, rather than duck-typing pane items. `ide-jupyter` consumes it to feed notebooks to language servers.
+A package that needs to know a notebook is open — an exporter, an outline, a linter with notebook-specific rules — asks here, rather than duck-typing pane items. The language-server bridge lives in this package and uses these same shapes internally.
 
 To _execute_ notebook cells, use [`jupyter.adapter`](jupyter.adapter.md) instead.
 

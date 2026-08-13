@@ -21,7 +21,8 @@
   },
   "backgroundTips": [
     "You can start a Jupyter notebook from scratch with {{ 'jupyter-view:new-notebook' | keystroke }}",
-    "In a notebook you can turn the selected cell into Markdown with {{ 'jupyter-view:change-cell-to-markdown' | keystroke }}"
+    "In a notebook you can turn the selected cell into Markdown with {{ 'jupyter-view:change-cell-to-markdown' | keystroke }}",
+    "Language servers reach inside notebooks: completions, hover and diagnostics work in cells when an ide package serves the cell language."
   ],
   "main": "./lib/main",
   "files": [
@@ -47,6 +48,11 @@
     "JupyterNotebookEditor": "deserializeNotebookEditor"
   },
   "consumedServices": {
+    "ide-client": {
+      "versions": {
+        "^1.0.0": "consumeIdeClient"
+      }
+    },
     "autocomplete.watch-editor": {
       "versions": {
         "^1.0.0": "consumeAutocompleteWatchEditor"
@@ -111,6 +117,20 @@
     "uuid": "^14.0.1"
   },
   "configSchema": {
+    "lsp": {
+      "title": "Language Servers",
+      "description": "Notebook cells and the language servers ide-client runs.",
+      "type": "object",
+      "collapsed": true,
+      "properties": {
+        "enabled": {
+          "title": "Enabled",
+          "description": "Feed open notebooks to the language servers that understand them, so completions, hover, diagnostics, and navigation work inside cells.",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
     "notebook": {
       "title": "Notebook",
       "description": "Notebook-level settings.",

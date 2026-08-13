@@ -9,6 +9,7 @@ Open and edit Jupyter notebooks.
 - **Rich output**: render stored notebook outputs — text, images, SVG, HTML, LaTeX, markdown, plotly and vega, with ANSI color — through jupyter-repl's renderers.
 - **Multi-select and history**: anchor-based multi-cell selection and buffer-based undo/redo of notebook edits.
 - **Execution integration**: run cells through the jupyter-repl kernel engine via the `jupyter.adapter` service, with per-cell run buttons and live execution status.
+- **Language servers**: feeds open notebooks to the language servers ide-client runs, so completions, hover, diagnostics, and navigation work inside cells with cross-cell context.
 - **Notebook search**: search and replace cell source through the search-panel package, entering edit mode on the matching cell.
 - **Open source**: open any `.ipynb` as plain JSON text from an active notebook or the tree-view.
 - **Editor integrations**: expose cells to linter, navigation, and scrollmap adapters so headings, selection, and diagnostics appear on the scrollbar.
@@ -80,6 +81,7 @@ Commands available in `.tree-view`:
 - **linter.adapter** (`1.0.0`): provided to map linter diagnostics from the backing editor onto the visible notebook cells.
 - **linter.ui** (`1.0.0`): provided to receive linter message updates so notebook scrollmap markers stay in sync with diagnostics.
 - **navigation.adapter** (`1.0.0`): provided to show notebook markdown headings as a document outline, activating and revealing the cell on selection.
+- **ide-client** (`^1.0.0`): consumed to open notebooks on the language-server hub — each code cell becomes its own document for servers that understand notebooks, such as Basedpyright and Ruff.
 - **autocomplete.watch-editor** (`^1.0.0`): consumed to keep autocomplete active in notebook cell editors.
 - **linter.editors** (`^1.1.0`): consumed to register the backing source editor for linting, since only pane items are linted on their own, and each cell editor render-only so projected diagnostics draw inside the cells.
 - **jupyter.output** (`^1.0.0`): consumed to render stored outputs with jupyter-repl's renderers; without it a notebook falls back to text and images.
