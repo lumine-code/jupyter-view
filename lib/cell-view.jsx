@@ -329,6 +329,14 @@ class CellView {
     // autocomplete shares words across cells and open documents.
     this.editorRegistryDisposable = lumine.textEditors.add(this.editor, { role: "fragment" });
 
+    // Render-only linter registration: no provider ever lints a cell editor
+    // (the notebook is checked through the source editor and the language
+    // servers), but its buffer needs the linter's marker layers so projected
+    // diagnostics draw squiggles and answer hover inside the cell.
+    this.linterRegistration = require("./linter-editors").addLinterEditor(this.editor, {
+      lint: false,
+    });
+
     // Cell editors aren't workspace pane items, so autocomplete has to be
     // asked to watch them explicitly (cleaned up on editor destroy)
     require("./autocomplete-watch").watchCellEditor(this.editor);
@@ -393,6 +401,11 @@ class CellView {
 
     // Handle cursor movement for cell navigation
     this.setupCellNavigation();
+
+    // Editors are created and destroyed as cells change type or markdown flips
+    // between rendered and editable; consumers following the notebook's cell
+    // editors — the language-server bridge — hear about it here.
+    this.props.editor?.notifyCellEditorChange?.(cell.id, this.editor);
   }
 
   /**
@@ -741,6 +754,7 @@ class CellView {
   }
 
   destroyEditor() {
+    const hadEditor = !!this.editor;
     if (this.editorCursorSubscription) {
       this.editorCursorSubscription.dispose();
       this.editorCursorSubscription = null;
@@ -757,11 +771,18 @@ class CellView {
       this.editorRegistryDisposable.dispose();
       this.editorRegistryDisposable = null;
     }
+    if (this.linterRegistration) {
+      this.linterRegistration.dispose();
+      this.linterRegistration = null;
+    }
     if (this.editor) {
       this.editor.destroy();
       this.editor = null;
     }
     this.editorElement = null;
+    if (hadEditor) {
+      this.props.editor?.notifyCellEditorChange?.(this.props.cell.id, null);
+    }
   }
 
   destroy() {
