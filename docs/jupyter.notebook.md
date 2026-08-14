@@ -4,7 +4,7 @@ Exposes the open notebook documents and the active one, for packages that need n
 
 |             |                                                               |
 | ----------- | ------------------------------------------------------------- |
-| Version     | `1.1.0`                                                       |
+| Version     | `1.0.0`                                                       |
 | Provided by | `provideJupyterNotebook()` returning the document facade      |
 | Consumed by | `consumeJupyterNotebook(notebooks)`                           |
 | Owner       | [`jupyter-view`](https://github.com/lumine-code/jupyter-view) |
@@ -88,4 +88,4 @@ Return a `Disposable` that drops your reference. Notebook documents and editors 
 
 ## Versioning
 
-`1.1.0` provided. Consume `^1.0.0` for the polled facade, `^1.1.0` when depending on `getNotebookEditors` or the registry observers. A change that breaks this shape gets a new service name rather than a new major version, and both sides move in the same release.
+`1.0.0` provided, `^1.0.0` consumed. A change that breaks this shape gets a new service name rather than a new major version, and both sides move in the same release.

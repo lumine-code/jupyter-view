@@ -14,7 +14,7 @@
     "cell",
     "kernel"
   ],
-  "version": "1.1.0",
+  "version": "1.0.0",
   "license": "MIT",
   "engines": {
     "lumine": "^1.0.0"
@@ -75,14 +75,14 @@
     },
     "linter.editors": {
       "versions": {
-        "^1.1.0": "consumeLinterEditors"
+        "^1.0.0": "consumeLinterEditors"
       }
     }
   },
   "providedServices": {
     "jupyter.notebook": {
       "versions": {
-        "1.1.0": "provideJupyterNotebook"
+        "1.0.0": "provideJupyterNotebook"
       }
     },
     "jupyter.adapter": {
