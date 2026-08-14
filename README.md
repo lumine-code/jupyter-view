@@ -18,7 +18,7 @@ Open and edit Jupyter notebooks.
 
 ## Installation
 
-To install `jupyter-view` search for _jupyter-view_ in the Install pane of the Lumine settings or run `lumine --install lumine-code/jupyter-view`.
+To install `jupyter-view` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/jupyter-view`.
 
 ## Commands
 
@@ -76,18 +76,18 @@ Commands available in `.tree-view`:
 
 ## Services
 
-- **[jupyter.adapter](docs/jupyter.adapter.md)** (`1.0.0`): provided to let [jupyter-repl](https://github.com/lumine-code/jupyter-repl) execute notebook cells with its normal run commands, routing kernel output, execution counts, focus, and navigation back into the notebook.
-- **[jupyter.notebook](docs/jupyter.notebook.md)** (`1.1.0`): provided to expose notebook documents, their editors, and the active notebook item to packages that need notebook-aware behavior.
-- **search.adapter** (`1.0.0`): provided to let the search-panel package find and replace cell source in the active notebook.
-- **linter.adapter** (`1.0.0`): provided to map linter diagnostics from the backing editor onto the visible notebook cells.
-- **linter.ui** (`1.0.0`): provided to receive linter message updates so notebook scrollmap markers stay in sync with diagnostics.
-- **navigation.adapter** (`1.0.0`): provided to show notebook markdown headings as a document outline, activating and revealing the cell on selection.
-- **ide-client** (`^1.0.0`): consumed to open notebooks on the language-server hub — each code cell becomes its own document for servers that understand notebooks, such as Basedpyright and Ruff.
-- **autocomplete.watch-editor** (`^1.0.0`): consumed to keep autocomplete active in notebook cell editors.
-- **linter.editors** (`^1.1.0`): consumed to register the backing source editor for linting, since only pane items are linted on their own, and each cell editor render-only so projected diagnostics draw inside the cells.
-- **jupyter.output** (`^1.0.0`): consumed to render stored outputs with jupyter-repl's renderers; without it a notebook falls back to text and images.
-- **tree-view.selection** (`^1.0.0`): consumed to add tree-view entries for opening a selected `.ipynb` as a notebook or as plain JSON source.
-- **scrollmap.widget** (`^1.0.0`): consumed to render notebook scrollmap markers in a standalone scrollbar widget.
+- [`jupyter.adapter`](docs/jupyter.adapter.md): provided to let [jupyter-repl](https://github.com/lumine-code/jupyter-repl) execute notebook cells with its normal run commands, routing kernel output, execution counts, focus, and navigation back into the notebook.
+- [`jupyter.notebook`](docs/jupyter.notebook.md): provided to expose notebook documents, their editors, and the active notebook item to packages that need notebook-aware behavior.
+- `search.adapter`: provided to let the search-panel package find and replace cell source in the active notebook.
+- `linter.adapter`: provided to map linter diagnostics from the backing editor onto the visible notebook cells.
+- `linter.ui`: provided to receive linter message updates so notebook scrollmap markers stay in sync with diagnostics.
+- `navigation.adapter`: provided to show notebook markdown headings as a document outline, activating and revealing the cell on selection.
+- `ide-client`: consumed to open notebooks on the language-server hub — each code cell becomes its own document for servers that understand notebooks, such as Basedpyright and Ruff.
+- `autocomplete.watch-editor`: consumed to keep autocomplete active in notebook cell editors.
+- `linter.editors`: consumed to register the backing source editor for linting, since only pane items are linted on their own, and each cell editor render-only so projected diagnostics draw inside the cells.
+- `jupyter.output`: consumed to render stored outputs with jupyter-repl's renderers; without it a notebook falls back to text and images.
+- `tree-view.selection`: consumed to add tree-view entries for opening a selected `.ipynb` as a notebook or as plain JSON source.
+- `scrollmap.widget`: consumed to render notebook scrollmap markers in a standalone scrollbar widget.
 
 ## Integration
 
