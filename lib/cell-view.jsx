@@ -164,7 +164,7 @@ class CellView {
     const { editor, index } = this.props;
     if (!editor) return;
     editor.setActiveCell(index);
-    lumine.commands.dispatch(editor.view?.element || this.element, "jupyter-repl:run-cell");
+    lumine.commands.dispatch(editor.view?.element || this.element, "jupyter-view:run-cell");
   };
 
   clearOutput = (event) => {
@@ -284,7 +284,7 @@ class CellView {
   readAfterUpdate() {
     this.addTooltip(this.refs.runButton, {
       title: "Run Cell",
-      keyBindingCommand: "jupyter-repl:run-cell",
+      keyBindingCommand: "jupyter-view:run-cell",
     });
     this.addTooltip(this.refs.clearButton, {
       title: "Clear Output",

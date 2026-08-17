@@ -26,6 +26,9 @@ Commands available in `lumine-workspace`:
 
 - `jupyter-view:toggle`: toggle the active notebook item,
 - `jupyter-view:new-notebook`: create a new notebook,
+- `jupyter-view:run-cell`: run the selected cell in the notebook's kernel,
+- `jupyter-view:run-cell-and-move-down`: run the selected cell and move on to the next,
+- `jupyter-view:run-all`: run every cell in the notebook,
 - `jupyter-view:scroll-up`: scroll the notebook up by one page,
 - `jupyter-view:scroll-down`: scroll the notebook down by one page,
 - `jupyter-view:open-source`: open the active notebook as plain text,
@@ -86,6 +89,7 @@ Commands available in `.tree-view`:
 - `autocomplete.watch-editor`: consumed to keep autocomplete active in notebook cell editors.
 - `linter.editors`: consumed to register the backing source editor for linting, since only pane items are linted on their own, and each cell editor render-only so projected diagnostics draw inside the cells.
 - `jupyter.output`: consumed to render stored outputs with jupyter-repl's renderers; without it a notebook falls back to text and images.
+- `jupyter.execution`: consumed to run notebook cells — the run commands route through it back into this package's own adapter.
 - `tree-view.selection`: consumed to add tree-view entries for opening a selected `.ipynb` as a notebook or as plain JSON source.
 - `scrollmap.widget`: consumed to render notebook scrollmap markers in a standalone scrollbar widget.
 

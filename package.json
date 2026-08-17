@@ -73,6 +73,11 @@
         "^1.0.0": "consumeJupyterOutput"
       }
     },
+    "jupyter.execution": {
+      "versions": {
+        "^1.0.0": "consumeJupyterExecution"
+      }
+    },
     "linter.editors": {
       "versions": {
         "^1.0.0": "consumeLinterEditors"

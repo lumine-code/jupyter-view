@@ -56,22 +56,22 @@
   },
 
   ".jupyter-notebook.edit-mode lumine-text-editor": {
-    "ctrl-enter": "jupyter-repl:run-cell",
-    "shift-enter": "jupyter-repl:run-cell-and-move-down",
+    "ctrl-enter": "jupyter-view:run-cell",
+    "shift-enter": "jupyter-view:run-cell-and-move-down",
     "alt-shift-enter": "jupyter-view:insert-cell-below-and-edit",
     "escape": "jupyter-view:enter-command-mode"
   },
 
   ".jupyter-notebook.edit-mode": {
-    "ctrl-enter": "jupyter-repl:run-cell",
-    "shift-enter": "jupyter-repl:run-cell-and-move-down",
+    "ctrl-enter": "jupyter-view:run-cell",
+    "shift-enter": "jupyter-view:run-cell-and-move-down",
     "alt-shift-enter": "jupyter-view:insert-cell-below-and-edit",
     "escape": "jupyter-view:enter-command-mode"
   },
 
   ".jupyter-notebook": {
-    "ctrl-enter": "jupyter-repl:run-cell",
-    "shift-enter": "jupyter-repl:run-cell-and-move-down",
+    "ctrl-enter": "jupyter-view:run-cell",
+    "shift-enter": "jupyter-view:run-cell-and-move-down",
     "ctrl-s": "jupyter-view:save",
     "ctrl-shift-s": "jupyter-view:save-as",
 
@@ -86,8 +86,8 @@
   },
 
   ".jupyter-notebook lumine-text-editor": {
-    "ctrl-enter": "jupyter-repl:run-cell",
-    "shift-enter": "jupyter-repl:run-cell-and-move-down",
+    "ctrl-enter": "jupyter-view:run-cell",
+    "shift-enter": "jupyter-view:run-cell-and-move-down",
     "alt-shift-enter": "jupyter-view:insert-cell-below-and-edit"
   }
 }

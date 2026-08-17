@@ -65,9 +65,9 @@ class NotebookView {
   // Buttons that only dispatch a command, so the toolbar can list them.
   commandButtons() {
     return [
-      ["jupyter-repl:run-cell", "icon-playback-play", "Run Cell"],
-      ["jupyter-repl:run-cell-and-move-down", "icon-jump-down", "Run Cell and Move Down"],
-      ["jupyter-repl:run-all", "icon-playback-fast-forward", "Run All Cells"],
+      ["jupyter-view:run-cell", "icon-playback-play", "Run Cell"],
+      ["jupyter-view:run-cell-and-move-down", "icon-jump-down", "Run Cell and Move Down"],
+      ["jupyter-view:run-all", "icon-playback-fast-forward", "Run All Cells"],
       null,
       ["jupyter-repl:interrupt-kernel", "icon-stop", "Interrupt Kernel"],
       ["jupyter-repl:restart-kernel", "icon-sync", "Restart Kernel"],

@@ -26,8 +26,10 @@ describe("jupyter-view package assets", () => {
     // alt-j is the Jupyter family's chord prefix. ctrl-shift-n is core's
     // application:new-window and this binding, being deeper, took it.
     expect(keymap["lumine-workspace"]["alt-j n"]).toBe("jupyter-view:new-notebook");
-    // The run bindings delegate to jupyter-repl (the execution engine).
-    expect(keymap[".jupyter-notebook"]["ctrl-enter"]).toBe("jupyter-repl:run-cell");
+    // The run bindings are this package's own commands, which route through
+    // jupyter-repl's execution service and its adapter integration.
+    expect(keymap[".jupyter-notebook"]["ctrl-enter"]).toBe("jupyter-view:run-cell");
+    expect(keymap[".jupyter-notebook"]["shift-enter"]).toBe("jupyter-view:run-cell-and-move-down");
 
     const menu = JSON.parse(read("menus/jupyter-view.json"));
     expect(Array.isArray(menu.menu)).toBe(true);
