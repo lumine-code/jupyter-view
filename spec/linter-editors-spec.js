@@ -1,4 +1,8 @@
-const { consumeLinterEditors, addLinterEditor } = require("../lib/linter-editors");
+const {
+  createLinterEditors,
+  consumeLinterEditors,
+  addLinterEditor,
+} = require("../lib/linter-editors");
 
 // The notebook's source editor is not a pane item, so the linter never
 // discovers it on its own; this holder hands it over through the
@@ -7,6 +11,7 @@ const { consumeLinterEditors, addLinterEditor } = require("../lib/linter-editors
 describe("lib/linter-editors", () => {
   let registrations;
   let serviceDisposable;
+  let ownership;
 
   const register = (editor) => {
     const entry = { editor, disposed: false };
@@ -23,10 +28,15 @@ describe("lib/linter-editors", () => {
   beforeEach(() => {
     registrations = [];
     serviceDisposable = null;
+    // The registry belongs to whoever owns this activation of the package, so
+    // each case takes it for itself. Without that, a notebook another spec file
+    // left open replays into the first expectation here.
+    ownership = createLinterEditors();
   });
 
   afterEach(() => {
     serviceDisposable?.dispose();
+    ownership.dispose();
   });
 
   it("registers an editor added after the service connected", () => {
@@ -88,6 +98,45 @@ describe("lib/linter-editors", () => {
     expect(options).toEqual([{ lint: false }, { lint: false }]);
 
     added.dispose();
+    editor.destroy();
+  });
+
+  it("forgets an editor that is destroyed without its registration disposed", () => {
+    serviceDisposable = consumeLinterEditors(register);
+    const editor = buildEditor();
+    addLinterEditor(editor);
+
+    editor.destroy();
+
+    expect(registrations[0].disposed).toBe(true);
+    serviceDisposable.dispose();
+    serviceDisposable = consumeLinterEditors(register);
+    expect(registrations.length).toBe(1);
+  });
+
+  it("disposes the previous registration when an editor is added twice", () => {
+    serviceDisposable = consumeLinterEditors(register);
+    const editor = buildEditor();
+
+    addLinterEditor(editor);
+    const second = addLinterEditor(editor, { lint: false });
+
+    expect(registrations.length).toBe(2);
+    expect(registrations[0].disposed).toBe(true);
+    expect(registrations[1].disposed).toBe(false);
+    second.dispose();
+    editor.destroy();
+  });
+
+  it("hands nothing on to the next owner of the registry", () => {
+    const editor = buildEditor();
+    addLinterEditor(editor);
+
+    ownership.dispose();
+    ownership = createLinterEditors();
+    serviceDisposable = consumeLinterEditors(register);
+
+    expect(registrations).toEqual([]);
     editor.destroy();
   });
 });

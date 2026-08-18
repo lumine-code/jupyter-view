@@ -117,9 +117,7 @@ describe("jupyter-view notebook resolution", () => {
     for (const editor of [dispatched, active]) {
       const document_ = editor.document;
       // One case below fakes the destroyed flag rather than destroying. Clear
-      // it so the real teardown still runs: the source editor each notebook
-      // hands to linter-editors sits in a module-level registry, and a notebook
-      // left undestroyed replays into every spec file that runs after this one.
+      // it so the real teardown still runs on both notebooks.
       editor._destroyed = false;
       editor.destroy();
       if (document_ && document_.refCount <= 0) document_.destroy();
