@@ -10,8 +10,8 @@ const exists = (rel) => fs.existsSync(path.join(root, rel));
 // "jupyter" keyword) must be preserved.
 describe("jupyter-view package assets", () => {
   it("ships keymaps, menus, and the grammar as JSON, not CSON", () => {
-    expect(exists("keymaps/jupyter-view.json")).toBe(true);
-    expect(exists("menus/jupyter-view.json")).toBe(true);
+    expect(exists("keymaps/main.json")).toBe(true);
+    expect(exists("menus/main.json")).toBe(true);
     expect(exists("grammars/jupyter.json")).toBe(true);
     expect(exists("keymaps/jupyter-next.cson")).toBe(false);
     expect(exists("menus/jupyter-next.cson")).toBe(false);
@@ -21,7 +21,7 @@ describe("jupyter-view package assets", () => {
   it("parses the keymap and menu, and every menu entry uses `command`", () => {
     // The editor loads keymaps through season, which tolerates comments, so
     // JSON.parse alone is the wrong reader.
-    const keymap = JSON.parse(read("keymaps/jupyter-view.json").replace(/^\s*\/\/.*$/gm, ""));
+    const keymap = JSON.parse(read("keymaps/main.json").replace(/^\s*\/\/.*$/gm, ""));
     expect(keymap[".jupyter-notebook"]).toBeDefined();
     // alt-j is the Jupyter family's chord prefix. ctrl-shift-n is core's
     // application:new-window and this binding, being deeper, took it.
@@ -31,7 +31,7 @@ describe("jupyter-view package assets", () => {
     expect(keymap[".jupyter-notebook"]["ctrl-enter"]).toBe("jupyter-view:run-cell");
     expect(keymap[".jupyter-notebook"]["shift-enter"]).toBe("jupyter-view:run-cell-and-move-down");
 
-    const menu = JSON.parse(read("menus/jupyter-view.json"));
+    const menu = JSON.parse(read("menus/main.json"));
     expect(Array.isArray(menu.menu)).toBe(true);
     expect(JSON.stringify(menu)).not.toContain('"commands"');
   });
@@ -43,9 +43,9 @@ describe("jupyter-view package assets", () => {
   });
 
   it("ships a CSS stylesheet built on custom properties, not Less", () => {
-    expect(exists("styles/jupyter-view.css")).toBe(true);
+    expect(exists("styles/main.css")).toBe(true);
     expect(exists("styles/jupyter-next.less")).toBe(false);
-    const css = read("styles/jupyter-view.css");
+    const css = read("styles/main.css");
     expect(css).toContain("var(--");
     expect(css).not.toContain('@import "ui-variables"');
     const cssWithoutComments = css.replace(/\/\*[\s\S]*?\*\//g, "");
