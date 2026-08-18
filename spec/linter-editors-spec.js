@@ -128,6 +128,19 @@ describe("lib/linter-editors", () => {
     editor.destroy();
   });
 
+  it("disposes what it was holding when the package gives the registry up", () => {
+    serviceDisposable = consumeLinterEditors(register);
+    const editor = buildEditor();
+    addLinterEditor(editor);
+    expect(registrations[0].disposed).toBe(false);
+
+    ownership.dispose();
+
+    expect(registrations[0].disposed).toBe(true);
+    ownership = createLinterEditors();
+    editor.destroy();
+  });
+
   it("hands nothing on to the next owner of the registry", () => {
     const editor = buildEditor();
     addLinterEditor(editor);

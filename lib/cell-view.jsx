@@ -352,8 +352,8 @@ class CellView {
     });
 
     // Cell editors aren't workspace pane items, so autocomplete has to be
-    // asked to watch them explicitly (cleaned up on editor destroy)
-    require("./autocomplete-watch").watchCellEditor(this.editor);
+    // asked to watch them explicitly.
+    this.autocompleteWatchDisposable = require("./autocomplete-watch").watchCellEditor(this.editor);
 
     // A grammar assigned from outside — the grammar selector — becomes the
     // cell's own language; applyGrammar's assignments are guarded off.
@@ -839,6 +839,10 @@ class CellView {
     if (this.linterRegistration) {
       this.linterRegistration.dispose();
       this.linterRegistration = null;
+    }
+    if (this.autocompleteWatchDisposable) {
+      this.autocompleteWatchDisposable.dispose();
+      this.autocompleteWatchDisposable = null;
     }
     if (this.editor) {
       this.editor.destroy();
