@@ -17,28 +17,6 @@
             {
               "label": "Open Source",
               "command": "jupyter-view:open-source"
-            },
-            {
-              "type": "separator"
-            },
-            {
-              "label": "Clear Output",
-              "command": "jupyter-view:clear-output"
-            },
-            {
-              "label": "Clear All Outputs",
-              "command": "jupyter-view:clear-all-outputs"
-            },
-            {
-              "type": "separator"
-            },
-            {
-              "label": "Export to Python",
-              "command": "jupyter-view:export-to-python"
-            },
-            {
-              "label": "Export to HTML",
-              "command": "jupyter-view:export-to-html"
             }
           ]
         }
@@ -103,8 +81,23 @@
         "command": "jupyter-view:clear-output"
       },
       {
+        "label": "Clear All Outputs",
+        "command": "jupyter-view:clear-all-outputs"
+      },
+      {
         "label": "Toggle Output",
         "command": "jupyter-view:toggle-cell-output"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "label": "Export to Python",
+        "command": "jupyter-view:export-to-python"
+      },
+      {
+        "label": "Export to HTML",
+        "command": "jupyter-view:export-to-html"
       },
       {
         "type": "separator"

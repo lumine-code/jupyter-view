@@ -24,21 +24,22 @@ To install `jupyter-view` search for it in the Install pane of the Lumine settin
 
 Commands available in `lumine-workspace`:
 
-- `jupyter-view:toggle`: toggle the active notebook item,
+- `jupyter-view:toggle`: hide or show the active notebook, or start a new one,
 - `jupyter-view:new-notebook`: create a new notebook,
+- `jupyter-view:open-source`: open the active notebook as plain text.
+
+Commands available in `.jupyter-notebook-container`:
+
 - `jupyter-view:run-cell`: run the selected cell in the notebook's kernel,
 - `jupyter-view:run-cell-and-move-down`: run the selected cell and move on to the next,
 - `jupyter-view:run-all`: run every cell in the notebook,
-- `jupyter-view:scroll-up`: scroll the notebook up by one page,
-- `jupyter-view:scroll-down`: scroll the notebook down by one page,
-- `jupyter-view:open-source`: open the active notebook as plain text,
 - `jupyter-view:clear-output`: clear active cell output,
 - `jupyter-view:clear-all-outputs`: clear all outputs,
 - `jupyter-view:insert-cell-above`: insert cell above,
 - `jupyter-view:insert-cell-below`: insert cell below,
 - `jupyter-view:insert-cell-below-and-edit`: insert cell below and enter edit mode,
-- `jupyter-view:insert-cell-above-and-extend-selection`: insert cell above and extend the selection to it,
 - `jupyter-view:insert-cell-below-and-extend-selection`: insert cell below and extend the selection to it,
+- `jupyter-view:insert-cell-above-and-extend-selection`: insert cell above and extend the selection to it,
 - `jupyter-view:delete-cell`: delete cell,
 - `jupyter-view:move-cell-up`: move cell up,
 - `jupyter-view:move-cell-down`: move cell down,
@@ -47,6 +48,8 @@ Commands available in `lumine-workspace`:
 - `jupyter-view:change-cell-to-raw`: change to raw cell,
 - `jupyter-view:toggle-cell-output`: toggle output visibility,
 - `jupyter-view:toggle-cell-input`: toggle input visibility,
+- `jupyter-view:export-to-python`: export to Python script,
+- `jupyter-view:export-to-html`: export to HTML,
 - `jupyter-view:enter-edit-mode`: enter edit mode,
 - `jupyter-view:enter-command-mode`: enter command mode,
 - `jupyter-view:focus-previous-cell`: focus previous cell,
@@ -55,18 +58,18 @@ Commands available in `lumine-workspace`:
 - `jupyter-view:focus-last-cell`: focus last cell,
 - `jupyter-view:select-previous-cell`: extend selection to previous cell,
 - `jupyter-view:select-next-cell`: extend selection to next cell,
+- `jupyter-view:save`: save notebook,
+- `jupyter-view:save-as`: save notebook as,
+- `jupyter-view:undo-cell-operation`: undo the latest notebook edit,
+- `jupyter-view:redo-cell-operation`: redo the latest notebook edit,
 - `jupyter-view:cut-cell`: cut cell,
 - `jupyter-view:copy-cell`: copy cell,
 - `jupyter-view:paste-cell-below`: paste cell below,
 - `jupyter-view:paste-cell-above`: paste cell above,
 - `jupyter-view:duplicate-cell`: duplicate cell,
 - `jupyter-view:merge-cell-below`: merge with cell below,
-- `jupyter-view:undo-cell-operation`: undo the latest notebook edit,
-- `jupyter-view:redo-cell-operation`: redo the latest notebook edit,
-- `jupyter-view:save`: save notebook,
-- `jupyter-view:save-as`: save notebook as,
-- `jupyter-view:export-to-python`: export to Python script,
-- `jupyter-view:export-to-html`: export to HTML.
+- `jupyter-view:scroll-up`: scroll the notebook up by one page,
+- `jupyter-view:scroll-down`: scroll the notebook down by one page.
 
 Commands available in `.jupyter-output-container`:
 
