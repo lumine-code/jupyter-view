@@ -27,7 +27,7 @@
 /* All styles scoped under .jupyter-view */
 .jupyter-view {
   --jupyter-cell-border: rgb(from var(--text-color) r g b / 0.1);
-  --jupyter-cell-active-border: var(--text-color-info);
+  --jupyter-cell-active-border: var(--accent-color);
   --jupyter-cell-error-border: var(--text-color-error);
   --jupyter-gutter-width: 72px;
   --jupyter-cell-padding: 6px;
@@ -168,16 +168,16 @@
 
   /* Mode-specific styles */
   .jupyter-notebook {
-    /* Command mode - blue border on active cell */
+    /* Command mode - accent border on active cell */
     &.command-mode {
       .mode-indicator {
-        background-color: rgb(from var(--text-color-info) r g b / 0.2);
-        color: var(--text-color-info);
+        background-color: rgb(from var(--accent-color) r g b / 0.2);
+        color: var(--accent-only-text-color);
       }
 
       .jupyter-cell.active {
-        border-color: var(--text-color-info);
-        border-left-color: var(--text-color-info);
+        border-color: var(--accent-color);
+        border-left-color: var(--accent-color);
       }
     }
 
@@ -238,8 +238,8 @@
 
     /* Multiple selection - selected but not active */
     &.selected:not(.active) {
-      border-color: rgb(from var(--text-color-info) r g b / 0.5);
-      border-left-color: rgb(from var(--text-color-info) r g b / 0.5);
+      border-color: rgb(from var(--accent-color) r g b / 0.5);
+      border-left-color: rgb(from var(--accent-color) r g b / 0.5);
     }
 
     /* Drag and drop states */
@@ -249,11 +249,11 @@
     }
 
     &.drop-above {
-      box-shadow: 0 -3px 0 0 var(--text-color-info);
+      box-shadow: 0 -3px 0 0 var(--accent-color);
     }
 
     &.drop-below {
-      box-shadow: 0 3px 0 0 var(--text-color-info);
+      box-shadow: 0 3px 0 0 var(--accent-color);
     }
   }
 
@@ -355,7 +355,7 @@
         min-height: 1.5em;
 
         &.is-focused {
-          border-color: var(--text-color-info);
+          border-color: var(--accent-color);
         }
       }
 
@@ -725,7 +725,7 @@
       width: 32px;
       height: 32px;
       border: 3px solid var(--base-border-color);
-      border-top-color: var(--text-color-info);
+      border-top-color: var(--accent-color);
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
