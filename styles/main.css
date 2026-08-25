@@ -372,6 +372,7 @@
     lumine-text-editor {
       .cursor-line {
         background-color: transparent !important;
+        box-shadow: none !important;
       }
 
       .bracket-matcher-plus .region {
