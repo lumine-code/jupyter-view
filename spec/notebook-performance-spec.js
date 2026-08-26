@@ -1,6 +1,7 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const { FileState } = require("lumine");
 const NotebookDocument = require("../lib/notebook-document");
 const NotebookDocumentRegistry = require("../lib/notebook-document-registry");
 const JupyterNotebookEditor = require("../lib/jupyter-notebook-editor");
@@ -9,6 +10,7 @@ const main = require("../lib/main");
 describe("notebook change tracking", () => {
   let documents = [];
   let editors = [];
+  let tempDirectories = [];
 
   afterEach(() => {
     for (const editor of editors) {
@@ -19,6 +21,10 @@ describe("notebook change tracking", () => {
     }
     editors = [];
     documents = [];
+    for (const directory of tempDirectories) {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
+    tempDirectories = [];
   });
 
   async function buildDocument() {
@@ -28,6 +34,165 @@ describe("notebook change tracking", () => {
     document._markCurrentStateSaved();
     return document;
   }
+
+  async function buildFileDocument() {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "jupyter-file-state-"));
+    const filePath = path.join(directory, "notebook.ipynb");
+    const notebook = {
+      cells: [
+        {
+          cell_type: "code",
+          id: "cell-1",
+          metadata: {},
+          source: ["saved\n"],
+          execution_count: null,
+          outputs: [],
+        },
+      ],
+      metadata: {},
+      nbformat: 4,
+      nbformat_minor: 5,
+    };
+    fs.writeFileSync(filePath, JSON.stringify(notebook, null, 2));
+    tempDirectories.push(directory);
+    const document = new NotebookDocument(filePath);
+    documents.push(document);
+    await document._loadFromFile();
+    document._markCurrentStateSaved();
+    return { document, filePath, notebook };
+  }
+
+  it("shares one exclusive file state across split views", async () => {
+    const { document } = await buildFileDocument();
+    const first = new JupyterNotebookEditor(document);
+    const second = new JupyterNotebookEditor(document);
+    editors.push(first, second);
+    const firstStates = [];
+    const secondStates = [];
+    first.onDidChangeFileState((fileState) => firstStates.push(fileState));
+    second.onDidChangeFileState((fileState) => secondStates.push(fileState));
+
+    expect(first.getFileState()).toBe(FileState.UNMODIFIED);
+    document.updateCellSource(0, "local edit", first);
+
+    expect(first.getFileState()).toBe(FileState.MODIFIED);
+    expect(second.getFileState()).toBe(FileState.MODIFIED);
+    expect(firstStates).toEqual([FileState.MODIFIED]);
+    expect(secondStates).toEqual([FileState.MODIFIED]);
+    expect(first.shouldPromptToSave()).toBe(false, "another split still owns the document");
+
+    second.destroy();
+    expect(first.shouldPromptToSave()).toBe(true);
+    const promptOnClose = lumine.config.get("core.promptOnCloseDirtyBuffer");
+    lumine.config.set("core.promptOnCloseDirtyBuffer", false);
+    expect(first.shouldPromptToSave()).toBe(false);
+    lumine.config.set("core.promptOnCloseDirtyBuffer", promptOnClose);
+  });
+
+  it("distinguishes no-op disk events, conflicts, disk reverts, and removal", async () => {
+    const { document, filePath, notebook } = await buildFileDocument();
+    const states = [];
+    document.onDidChangeFileState((fileState) => states.push(fileState));
+    document.updateCellSource(0, "local edit");
+
+    // Reformatting the saved revision is not a conflict.
+    fs.writeFileSync(filePath, JSON.stringify(notebook));
+    await document._handleFileChange();
+    expect(document.getFileState()).toBe(FileState.MODIFIED);
+
+    const external = structuredClone(notebook);
+    external.cells[0].source = ["external\n"];
+    fs.writeFileSync(filePath, JSON.stringify(external));
+    await document._handleFileChange();
+    expect(document.getFileState()).toBe(FileState.CONFLICTED);
+    expect(document.getCell(0).source).toBe("local edit");
+
+    fs.writeFileSync(filePath, JSON.stringify(notebook, null, 2));
+    await document._handleFileChange();
+    expect(document.getFileState()).toBe(FileState.MODIFIED);
+
+    document._watchFile();
+    document.file.emitter.emit("did-delete");
+    expect(document.getFileState()).toBe(FileState.REMOVED);
+    document.savedHistoryStateId = document.currentHistoryStateId;
+    document.savedRuntimeRevision = document.runtimeRevision;
+    document.updateModifiedState();
+    expect(document.getFileState()).toBe(FileState.REMOVED);
+
+    expect(await document.save()).toBe(true);
+    expect(document.getFileState()).toBe(FileState.UNMODIFIED);
+    expect(states).toEqual([
+      FileState.MODIFIED,
+      FileState.CONFLICTED,
+      FileState.MODIFIED,
+      FileState.REMOVED,
+      FileState.UNMODIFIED,
+    ]);
+  });
+
+  it("reloads a changed disk revision when the document is clean", async () => {
+    const { document, filePath, notebook } = await buildFileDocument();
+    const external = structuredClone(notebook);
+    external.cells[0].source = ["external\n"];
+    fs.writeFileSync(filePath, JSON.stringify(external));
+
+    await document._handleFileChange();
+
+    expect(document.getCell(0).source).toBe("external\n");
+    expect(document.getFileState()).toBe(FileState.UNMODIFIED);
+  });
+
+  it("turns an async reload into a conflict when an edit wins the race", async () => {
+    const { document, filePath, notebook } = await buildFileDocument();
+    const external = structuredClone(notebook);
+    external.cells[0].source = ["external\n"];
+    fs.writeFileSync(filePath, JSON.stringify(external));
+    const revision = await document._readFile();
+    let finishRead;
+    spyOn(document, "_readFileWithRetries").and.returnValue(
+      new Promise((resolve) => {
+        finishRead = () => resolve(revision);
+      }),
+    );
+
+    const reload = document._handleFileChange();
+    document.updateCellSource(0, "local edit");
+    finishRead();
+    await reload;
+
+    expect(document.getCell(0).source).toBe("local edit");
+    expect(document.getFileState()).toBe(FileState.CONFLICTED);
+  });
+
+  it("serializes and revalidates a restored non-unmodified state", async () => {
+    const { document, filePath, notebook } = await buildFileDocument();
+    document.updateCellSource(0, "local edit");
+    const external = structuredClone(notebook);
+    external.cells[0].source = ["external\n"];
+    fs.writeFileSync(filePath, JSON.stringify(external));
+    await document._handleFileChange();
+    const state = document.serializeState();
+
+    expect(state.fileState).toBe(FileState.CONFLICTED);
+    expect(state.notebookData.cells[0].source).toEqual(["local edit"]);
+    expect(state.savedDiskFingerprint).not.toBeNull();
+
+    const restored = new NotebookDocument(filePath);
+    documents.push(restored);
+    await restored.initializeFromData(state.notebookData);
+    restored.restoreState(state);
+    await restored.reconcileRestoredFileState();
+    expect(restored.getFileState()).toBe(FileState.CONFLICTED);
+    expect(restored.getCell(0).source).toBe("local edit");
+
+    fs.writeFileSync(filePath, JSON.stringify(notebook));
+    await restored.reconcileRestoredFileState();
+    expect(restored.getFileState()).toBe(FileState.MODIFIED);
+
+    fs.rmSync(filePath);
+    await restored.reconcileRestoredFileState();
+    expect(restored.getFileState()).toBe(FileState.REMOVED);
+  });
 
   it("classifies history, runtime and transient changes without hashing outputs", async () => {
     const document = await buildDocument();
