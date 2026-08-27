@@ -6,7 +6,7 @@
 const etch = require("@lumine-code/etch");
 const { CompositeDisposable, Disposable } = require("lumine");
 const CellView = require("./cell-view");
-const { getNotebookLanguage } = require("./notebook-language");
+const { getGrammarForLanguage, getNotebookLanguage } = require("./notebook-language");
 
 class NotebookView {
   constructor(props) {
@@ -34,13 +34,16 @@ class NotebookView {
     this.element.addEventListener("click", this.handleClick.bind(this));
 
     // Watch for scrollPastEnd setting changes
-    this._scrollPastEndDisposable = lumine.config.onDidChange("editor.scrollPastEnd", () => {
-      this.applyScrollPastEnd();
-    });
+    this._scrollPastEndConfigOptions = this.scrollPastEndConfigOptions();
+    this._scrollPastEndDisposable = lumine.config.onDidChange(
+      "editor.scrollPastEnd",
+      this._scrollPastEndConfigOptions,
+      () => this.applyScrollPastEnd(),
+    );
 
     // Watch for container resize to update scroll past end padding
     this._resizeObserver = new ResizeObserver(() => {
-      if (lumine.config.get("editor.scrollPastEnd")) {
+      if (lumine.config.get("editor.scrollPastEnd", this._scrollPastEndConfigOptions)) {
         this.applyScrollPastEnd();
       }
     });
@@ -383,7 +386,10 @@ class NotebookView {
   applyScrollPastEnd() {
     if (!this.cellsContainer) return;
 
-    const scrollPastEnd = lumine.config.get("editor.scrollPastEnd");
+    const scrollPastEnd = lumine.config.get(
+      "editor.scrollPastEnd",
+      this._scrollPastEndConfigOptions,
+    );
     if (scrollPastEnd) {
       // Add padding-bottom equal to the container's height minus some minimal space
       // This allows scrolling the last cell to near the top of the viewport
@@ -398,6 +404,12 @@ class NotebookView {
     } else {
       this.cellsContainer.style.paddingBottom = "";
     }
+  }
+
+  scrollPastEndConfigOptions() {
+    const language = getNotebookLanguage(this.props.editor?.document?.metadata || {});
+    const grammar = getGrammarForLanguage(language);
+    return grammar?.scopeName ? { scope: [grammar.scopeName] } : {};
   }
 
   update(props) {
