@@ -119,7 +119,7 @@
   "dependencies": {
     "@lumine-code/etch": "github:lumine-code/etch#df06b3fca2ec49b1d6b76cb8af3e9f5015a2612c",
     "anser": "^2.3.5",
-    "uuid": "^14.0.1"
+    "uuid": "^14.0.2"
   },
   "configSchema": {
     "lsp": {
@@ -227,7 +227,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.8.1",
+    "eslint": "^10.9.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-n": "^18.3.0",
     "globals": "^17.11.0",
