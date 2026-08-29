@@ -11,6 +11,7 @@ const { getGrammarForLanguage, getNotebookLanguage } = require("./notebook-langu
 class NotebookView {
   constructor(props) {
     this.props = props;
+    this.document = props.document || globalThis.document;
     this.mode = "command"; // 'command' or 'edit'
     this.selectedCells = new Set(); // Set of selected cell indices
     this._selectionAnchor = null; // Anchor index for range-extension (shift+arrow / shift+click)
@@ -26,7 +27,7 @@ class NotebookView {
     this._tooltips = new CompositeDisposable();
     this._tooltipTargets = new WeakSet();
 
-    etch.initialize(this);
+    etch.initialize(this, { document: this.document });
 
     // Set up focus tracking for mode switching
     this.element.addEventListener("focusin", this.handleFocusIn.bind(this));
@@ -42,7 +43,7 @@ class NotebookView {
     );
 
     // Watch for container resize to update scroll past end padding
-    this._resizeObserver = new ResizeObserver(() => {
+    this._resizeObserver = new this.document.defaultView.ResizeObserver(() => {
       if (lumine.config.get("editor.scrollPastEnd", this._scrollPastEndConfigOptions)) {
         this.applyScrollPastEnd();
       }
@@ -54,7 +55,7 @@ class NotebookView {
       this._mouseButtonDown = true;
       this.activatePane();
     });
-    document.addEventListener(
+    this.document.addEventListener(
       "mouseup",
       (this._handleGlobalMouseUp = () => {
         this._mouseButtonDown = false;
@@ -63,6 +64,10 @@ class NotebookView {
 
     // The container only exists once the first render has run.
     this.readAfterUpdate();
+  }
+
+  getWindow() {
+    return this.element.ownerDocument.defaultView;
   }
 
   // Buttons that only dispatch a command, so the toolbar can list them.
@@ -194,7 +199,7 @@ class NotebookView {
     const focusSibling = (target, toEnd) => {
       if (!editor) return;
       editor.setActiveCell(target);
-      requestAnimationFrame(() => {
+      this.getWindow().requestAnimationFrame(() => {
         const view = this.cellViews.get(cellsArray[target]?.id);
         if (!view) return;
         view.focus();
@@ -206,6 +211,7 @@ class NotebookView {
     };
 
     return {
+      document: this.document,
       cell,
       index,
       active: index === activeCellIndex,
@@ -393,7 +399,7 @@ class NotebookView {
     if (scrollPastEnd) {
       // Add padding-bottom equal to the container's height minus some minimal space
       // This allows scrolling the last cell to near the top of the viewport
-      requestAnimationFrame(() => {
+      this.getWindow().requestAnimationFrame(() => {
         if (this.cellsContainer) {
           const containerHeight = this.cellsContainer.clientHeight;
           // Leave at least 50px visible at the bottom
@@ -536,10 +542,10 @@ class NotebookView {
       if (this._skipFocusModeChange) return;
       if (this._mouseButtonDown) return;
 
-      if (!this.element.contains(document.activeElement)) {
+      if (!this.element.contains(this.element.ownerDocument.activeElement)) {
         // Focus left the notebook - hide selections
         this._hideSelectionClasses();
-      } else if (!document.activeElement.closest("lumine-text-editor")) {
+      } else if (!this.element.ownerDocument.activeElement.closest("lumine-text-editor")) {
         // Focus is in notebook but not in an editor
         this.setMode("command");
       }
@@ -868,9 +874,10 @@ class NotebookView {
         container.scrollTop += this._pendingScrollY;
         this._pendingScrollY = 0;
       }
-      this._scrollAnimId = this._pendingScrollY !== 0 ? requestAnimationFrame(animate) : null;
+      this._scrollAnimId =
+        this._pendingScrollY !== 0 ? this.getWindow().requestAnimationFrame(animate) : null;
     };
-    this._scrollAnimId = requestAnimationFrame(animate);
+    this._scrollAnimId = this.getWindow().requestAnimationFrame(animate);
   }
 
   destroy() {
@@ -883,13 +890,13 @@ class NotebookView {
     this.stopAutoScroll();
 
     if (this._scrollAnimId) {
-      cancelAnimationFrame(this._scrollAnimId);
+      this.getWindow().cancelAnimationFrame(this._scrollAnimId);
       this._scrollAnimId = null;
     }
 
     // Remove global mouse up listener
     if (this._handleGlobalMouseUp) {
-      document.removeEventListener("mouseup", this._handleGlobalMouseUp);
+      this.document.removeEventListener("mouseup", this._handleGlobalMouseUp);
       this._handleGlobalMouseUp = null;
     }
 

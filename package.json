@@ -65,7 +65,7 @@
     },
     "scrollmap.widget": {
       "versions": {
-        "^1.0.0": "consumeScrollmapWidget"
+        "^2.0.0": "consumeScrollmapWidget"
       }
     },
     "jupyter.output": {
