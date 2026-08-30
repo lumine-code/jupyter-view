@@ -146,7 +146,7 @@ describe("the language-server bridge", () => {
     expect(client.opened[1].disposed).toBe(true);
   });
 
-  it("reveals a cell through the notebook editor for server-initiated shows", () => {
+  it("returns notebook revelation for server-initiated shows", () => {
     const cells = [
       { id: "m1", type: "markdown", source: "" },
       { id: "c1", type: "code", source: "x\n" },
@@ -154,17 +154,21 @@ describe("the language-server bridge", () => {
     const document = fakeDocument({ filePath: "C:\\proj\\nb.ipynb", cells });
     const host = fakeHost([document]);
     const revealed = [];
+    const revelation = Promise.resolve();
     host.getNotebookEditors = () => [
       {
         getCellEditorById: () => null,
         onDidChangeCellEditors: () => ({ dispose() {} }),
-        revealCell: (index, position) => revealed.push({ index, position }),
+        revealCell: (index, position) => {
+          revealed.push({ index, position });
+          return revelation;
+        },
       },
     ];
     const client = fakeClient();
     manager = new LspBridgeManager(client, host);
 
-    client.opened[0].descriptor.show({
+    const result = client.opened[0].descriptor.show({
       cellId: "c1",
       range: [
         [2, 4],
@@ -172,6 +176,7 @@ describe("the language-server bridge", () => {
       ],
     });
     expect(revealed).toEqual([{ index: 1, position: { row: 2, column: 4 } }]);
+    expect(result).toBe(revelation);
   });
 
   it("syncs the cells a restored document loads after the bridge opened", async () => {

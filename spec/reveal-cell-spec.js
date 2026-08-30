@@ -4,8 +4,8 @@ const JupyterNotebookEditor = require("../lib/jupyter-notebook-editor");
 // revealCell is the generic activate-scroll-place-cursor flow behind linter
 // navigation and language-server locations. The scroll and cursor halves run
 // under requestAnimationFrame, which the headless runner starves, so these
-// specs pin the synchronous contract: bounds, active-cell selection, and the
-// linter reveal delegating with the message's cell and position.
+// specs pin the contract before those frames: workspace activation, bounds,
+// active-cell selection, and linter delegation with the message's position.
 describe("JupyterNotebookEditor.revealCell", () => {
   let document_;
   let editor;
@@ -24,13 +24,15 @@ describe("JupyterNotebookEditor.revealCell", () => {
     if (document_.refCount <= 0) document_.destroy();
   });
 
-  it("activates the addressed cell and ignores an index out of range", () => {
-    editor.revealCell(2);
+  it("activates the notebook through the workspace before addressing its cell", async () => {
+    const open = spyOn(lumine.workspace, "open").and.callThrough();
+    await editor.revealCell(2);
     expect(editor.activeCellIndex).toBe(2);
+    expect(open).toHaveBeenCalledWith(editor, { searchAllPanes: true });
 
-    editor.revealCell(99);
+    await editor.revealCell(99);
     expect(editor.activeCellIndex).toBe(2);
-    editor.revealCell(-1);
+    await editor.revealCell(-1);
     expect(editor.activeCellIndex).toBe(2);
   });
 
@@ -50,5 +52,14 @@ describe("JupyterNotebookEditor.revealCell", () => {
     editor.revealLinterMessage(message);
 
     expect(editor.revealCell).toHaveBeenCalledWith(2, { row: 1, column: 2 });
+  });
+
+  it("activates the notebook through the workspace before revealing a navigation header", async () => {
+    const open = spyOn(lumine.workspace, "open").and.callThrough();
+
+    await editor.revealNavigationHeader({ cellIndex: 1, cellRow: 0 });
+
+    expect(open).toHaveBeenCalledWith(editor, { searchAllPanes: true });
+    expect(editor.activeCellIndex).toBe(1);
   });
 });
