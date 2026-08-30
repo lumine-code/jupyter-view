@@ -52,8 +52,8 @@ function renderFallbackOutput(output) {
   return null;
 }
 
-function renderOutput(output, domDocument) {
-  const service = outputRenderer.get(domDocument);
+function renderOutput(output) {
+  const service = outputRenderer.get();
   if (!service) {
     return renderFallbackOutput(output);
   }
@@ -63,8 +63,7 @@ function renderOutput(output, domDocument) {
 class OutputView {
   constructor(props) {
     this.props = props;
-    this.document = props.document || globalThis.document;
-    etch.initialize(this, { document: this.document });
+    etch.initialize(this);
 
     // Re-render when the service arrives or goes away: a notebook restored at
     // startup can beat jupyter-repl's activation by a frame.
@@ -90,7 +89,7 @@ class OutputView {
               className={`jupyter-output output-${output.output_type || "unknown"}`}
               attributes={{ "data-output-index": String(index) }}
             >
-              {renderOutput(output, this.document)}
+              {renderOutput(output)}
             </div>
           ))}
         </div>

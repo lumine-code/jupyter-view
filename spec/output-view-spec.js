@@ -114,23 +114,6 @@ describe("output view", () => {
       expect(service.calls.every((output) => output._normalized)).toBe(true);
     });
 
-    it("selects the service instance belonging to the output document", () => {
-      const domDocument = document.implementation.createHTMLDocument("output surface");
-      const realmService = fakeService();
-      service.forDocument = jasmine.createSpy("forDocument").and.returnValue(realmService);
-
-      view = new OutputView({
-        document: domDocument,
-        outputs: [{ output_type: "stream", name: "stdout", text: "child" }],
-        maxHeight: 0,
-      });
-      flush(view);
-
-      expect(service.forDocument).toHaveBeenCalledWith(domDocument);
-      expect(view.element.ownerDocument).toBe(domDocument);
-      expect(realmService.calls.length).toBeGreaterThan(0);
-    });
-
     it("upgrades an already-mounted view when the service arrives", () => {
       outputRenderer.set(null);
       view = mount([{ output_type: "stream", name: "stdout", text: "hi" }]);

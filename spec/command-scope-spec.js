@@ -20,37 +20,6 @@ function activatePackage() {
   return lumine.packages.activatePackage("jupyter-view");
 }
 
-describe("jupyter-view export dialog", () => {
-  let editor;
-
-  beforeEach(async () => {
-    editor = await buildNotebook();
-    lumine.workspace.getCenter().getActivePane().addItem(editor);
-  });
-
-  afterEach(async () => {
-    const document_ = editor.document;
-    const pane = lumine.workspace.paneForItem(editor);
-    if (pane) await pane.destroyItem(editor, true);
-    else if (!editor._destroyed) editor.destroy();
-    if (document_ && document_.refCount <= 0) document_.destroy();
-  });
-
-  it("owns every export picker with the notebook item", async () => {
-    const options = {
-      defaultPath: "Untitled.py",
-      filters: [{ name: "Python", extensions: ["py"] }],
-    };
-    const choosePath = spyOn(lumine.workspace, "showSaveDialogForPaneItem").and.returnValue(
-      Promise.resolve({ canceled: true }),
-    );
-
-    expect(await editor.promptExportPath(options)).toBeUndefined();
-    expect(choosePath.calls.mostRecent().args[0]).toBe(editor);
-    expect(choosePath.calls.mostRecent().args[1]).toBe(options);
-  });
-});
-
 // Every notebook command was registered on `lumine-workspace`. That listed all
 // forty in the command palette from anywhere, and let each one act on whichever
 // notebook happened to be the active center pane item, however far focus had moved
@@ -100,35 +69,6 @@ describe("jupyter-view command scope", () => {
       "jupyter-view:scroll-down",
     ]) {
       expect(names).toContain(name);
-    }
-  });
-
-  it("copies an output selection from the target's Window", () => {
-    const frame = document.createElement("iframe");
-    document.body.appendChild(frame);
-    try {
-      window.getSelection().removeAllRanges();
-      const output = frame.contentDocument.createElement("div");
-      output.className = "jupyter-output-container";
-      output.textContent = "detached output";
-      frame.contentDocument.body.appendChild(output);
-      const range = frame.contentDocument.createRange();
-      range.selectNodeContents(output);
-      const selection = frame.contentWindow.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-      spyOn(lumine.clipboard, "write");
-
-      const template = lumine.contextMenu.templateForElement(output);
-      expect(template.some((item) => item.command === "jupyter-view:copy-output-selection")).toBe(
-        true,
-      );
-
-      lumine.commands.dispatch(output, "jupyter-view:copy-output-selection");
-      expect(lumine.clipboard.write).toHaveBeenCalledWith("detached output");
-    } finally {
-      frame.contentWindow.getSelection().removeAllRanges();
-      frame.remove();
     }
   });
 

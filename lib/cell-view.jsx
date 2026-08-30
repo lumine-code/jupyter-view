@@ -42,7 +42,7 @@ const DISPLAYABLE_OUTPUTS = new Set(["stream", "execute_result", "display_data",
 class EditorHost {
   constructor(props) {
     this.props = props;
-    etch.initialize(this, { document: props.document });
+    etch.initialize(this);
     this.attach();
   }
 
@@ -268,7 +268,6 @@ class CellView {
             <div className="cell-output-container">
               <OutputView
                 ref="outputView"
-                document={this.props.document}
                 outputs={outputs}
                 maxHeight={lumine.config.get("jupyter-view.output.maxHeight")}
               />
@@ -513,7 +512,7 @@ class CellView {
 
   handleDragEnd() {
     // Remove dragging class from all cells
-    const cells = this.element.ownerDocument.querySelectorAll(".jupyter-cell");
+    const cells = document.querySelectorAll(".jupyter-cell");
     cells.forEach((cell) => {
       cell.classList.remove("dragging", "drop-above", "drop-below");
     });
@@ -786,7 +785,7 @@ class CellView {
   focus() {
     if (this.editor && this.editorElement) {
       // Focus must happen in next frame to work reliably
-      this.element.ownerDocument.defaultView.requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
         if (!this.editorElement) return;
 
         // preventScroll: true — scrolling is handled by scrollToCell (block: nearest)
@@ -798,7 +797,7 @@ class CellView {
           const model = editorView.getModel();
           if (model) {
             // This triggers the cursor to appear
-            this.editorElement.closest("lumine-workspace")?.focus?.();
+            lumine.views.getView(lumine.workspace).focus();
             this.editorElement.focus({ preventScroll: true });
           }
         }
