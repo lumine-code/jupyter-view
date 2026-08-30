@@ -72,6 +72,35 @@ describe("jupyter-view command scope", () => {
     }
   });
 
+  it("copies an output selection from the target's Window", () => {
+    const frame = document.createElement("iframe");
+    document.body.appendChild(frame);
+    try {
+      window.getSelection().removeAllRanges();
+      const output = frame.contentDocument.createElement("div");
+      output.className = "jupyter-output-container";
+      output.textContent = "detached output";
+      frame.contentDocument.body.appendChild(output);
+      const range = frame.contentDocument.createRange();
+      range.selectNodeContents(output);
+      const selection = frame.contentWindow.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      spyOn(lumine.clipboard, "write");
+
+      const template = lumine.contextMenu.templateForElement(output);
+      expect(template.some((item) => item.command === "jupyter-view:copy-output-selection")).toBe(
+        true,
+      );
+
+      lumine.commands.dispatch(output, "jupyter-view:copy-output-selection");
+      expect(lumine.clipboard.write).toHaveBeenCalledWith("detached output");
+    } finally {
+      frame.contentWindow.getSelection().removeAllRanges();
+      frame.remove();
+    }
+  });
+
   // The application menu dispatches at whatever holds focus, not at the file
   // the command is about, so an item naming a notebook-scoped command would
   // silently do nothing whenever focus had left the notebook.
