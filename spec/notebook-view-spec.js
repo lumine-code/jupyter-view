@@ -67,18 +67,19 @@ describe("notebook view", () => {
   it("renders the toolbar", () => {
     view = mount([cell("a")]);
 
-    expect(view.element.querySelectorAll(".jupyter-notebook-toolbar button").length).toBe(13);
-    expect(view.element.querySelector(".cell-type-select")).toBeTruthy();
+    expect(view.element.querySelectorAll(".jupyter-notebook-toolbar .btn").length).toBe(13);
+    expect(view.element.querySelector(".cell-type-select[role=combobox]")).toBeTruthy();
+    expect(view.element.querySelector("select")).toBeNull();
   });
 
   it("shows the active cell's type in the dropdown", () => {
     view = mount([cell("a"), cell("b", { type: "markdown" })]);
-    expect(view.element.querySelector(".cell-type-select").value).toBe("code");
+    expect(view.refs.cellTypeSelect.controller.value).toBe("code");
 
     view.update({ activeCellIndex: 1 });
     flush(view);
 
-    expect(view.element.querySelector(".cell-type-select").value).toBe("markdown");
+    expect(view.refs.cellTypeSelect.controller.value).toBe("markdown");
   });
 
   it("reflects the mode in its class and its indicator", () => {

@@ -8,6 +8,39 @@ const { CompositeDisposable, Disposable } = require("lumine");
 const CellView = require("./cell-view");
 const { getGrammarForLanguage, getNotebookLanguage } = require("./notebook-language");
 
+const CELL_TYPES = [
+  { value: "code", label: "Code" },
+  { value: "markdown", label: "Markdown" },
+  { value: "raw", label: "Raw" },
+];
+
+class CellTypeSelectBox {
+  constructor(props) {
+    this.props = props;
+    this.controller = lumine.menu.createSelectBox({
+      items: CELL_TYPES,
+      value: props.value,
+      ariaLabel: "Cell type",
+      className: "cell-type-select",
+    });
+    this.element = this.controller.element;
+    this.changeDisposable = this.controller.onDidChange(({ value }) => this.props.onChange(value));
+    this.wheelHandler = (event) => this.props.onWheel(event);
+    this.element.addEventListener("wheel", this.wheelHandler, { passive: false });
+  }
+
+  update(props) {
+    this.props = props;
+    this.controller.setValue(props.value);
+  }
+
+  destroy() {
+    this.element.removeEventListener("wheel", this.wheelHandler);
+    this.changeDisposable.dispose();
+    this.controller.destroy();
+  }
+}
+
 class NotebookView {
   constructor(props) {
     this.props = props;
@@ -114,23 +147,19 @@ class NotebookView {
     if (editor) editor[method]();
   };
 
-  handleCellTypeChange = (event) => {
+  handleCellTypeChange = (value) => {
     const { editor } = this.props;
-    if (editor) editor.changeCellType(event.target.value);
+    if (editor) editor.changeCellType(value);
   };
 
   // Scrolling the dropdown cycles the type, which is quicker than opening it.
   handleCellTypeWheel = (event) => {
     const { editor } = this.props;
-    const select = this.refs.cellTypeSelect;
+    const select = this.refs.cellTypeSelect?.controller;
     if (!editor || !select) return;
     event.preventDefault();
-    const options = Array.from(select.options);
-    const current = options.findIndex((option) => option.value === select.value);
-    const next = Math.max(0, Math.min(options.length - 1, current + (event.deltaY > 0 ? 1 : -1)));
-    if (next === current) return;
-    select.value = options[next].value;
-    editor.changeCellType(options[next].value);
+    if (event.deltaY > 0) select.selectNext();
+    else if (event.deltaY < 0) select.selectPrevious();
   };
 
   activeCellType() {
@@ -168,17 +197,12 @@ class NotebookView {
             ),
           )}
           <div className="toolbar-separator" />
-          <select
-            className="input-select cell-type-select"
+          <CellTypeSelectBox
             ref="cellTypeSelect"
             value={this.activeCellType()}
             onChange={this.handleCellTypeChange}
             onWheel={this.handleCellTypeWheel}
-          >
-            <option value="code">Code</option>
-            <option value="markdown">Markdown</option>
-            <option value="raw">Raw</option>
-          </select>
+          />
           <div className="toolbar-separator" />
           <span className="mode-indicator">{this.mode === "edit" ? "Edit" : "Command"}</span>
         </div>
@@ -286,7 +310,7 @@ class NotebookView {
         keyBindingCommand: entry[2],
       });
     }
-    this.addTooltip(this.refs.cellTypeSelect, { title: "Cell Type (scroll to cycle)" });
+    this.addTooltip(this.refs.cellTypeSelect?.element, { title: "Cell Type (scroll to cycle)" });
 
     const container = this.cellsContainer;
     if (container && this._observedContainer !== container) {
@@ -550,8 +574,8 @@ class NotebookView {
     // Activate pane on any click
     this.activatePane();
 
-    // Don't steal focus from interactive toolbar controls (e.g. <select> dropdowns)
-    if (event.target.closest("select, input, button, option")) {
+    // Don't steal focus from interactive toolbar controls.
+    if (event.target.closest("input, button")) {
       return;
     }
 
