@@ -13,6 +13,7 @@ const {
 describe("notebook language mapping", () => {
   beforeEach(async () => {
     await lumine.packages.activatePackage("language-python");
+    await lumine.packages.activatePackage("language-ipython");
     await lumine.packages.activatePackage("language-json");
   });
 

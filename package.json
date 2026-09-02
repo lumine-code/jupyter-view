@@ -24,10 +24,14 @@
     "In a notebook you can turn the selected cell into Markdown with {{ 'jupyter-view:change-cell-to-markdown' | keystroke }}",
     "Language servers reach inside notebooks: completions, hover and diagnostics work in cells when an ide package serves the cell language."
   ],
+  "specPackages": [
+    "language-ipython",
+    "language-json",
+    "language-python"
+  ],
   "main": "./lib/main",
   "files": [
     "docs",
-    "grammars",
     "keymaps",
     "lib",
     "menus",

@@ -396,9 +396,7 @@ describe("notebook change tracking", () => {
     editor.destroy();
     registry.destroy();
 
-    const addedJupyterGrammar = lumine.grammars.grammarForScopeName("source.jupyter")
-      ? null
-      : lumine.grammars.loadGrammarSync(require.resolve("../grammars/jupyter.json"));
+    await lumine.packages.activatePackage("language-json");
     const restoredRegistry = new NotebookDocumentRegistry(packageState);
     const restoredDocument = await restoredRegistry.getOrCreateDocumentById(documentId);
     const restoredEditor = new JupyterNotebookEditor(restoredDocument);
@@ -413,7 +411,6 @@ describe("notebook change tracking", () => {
 
     restoredEditor.destroy();
     restoredRegistry.destroy();
-    if (addedJupyterGrammar) lumine.grammars.removeGrammar(addedJupyterGrammar);
     fs.rmSync(tempDirectory, { recursive: true, force: true });
   });
 });

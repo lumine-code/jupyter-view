@@ -6,16 +6,13 @@ const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 const exists = (rel) => fs.existsSync(path.join(root, rel));
 
 // Guards for the CSON -> JSON and Less -> CSS modernization and the jupyter.*
-// service rebrand. Jupyter's own names (the source.jupyter grammar, the
-// "jupyter" keyword) must be preserved.
+// service rebrand.
 describe("jupyter-view package assets", () => {
-  it("ships keymaps, menus, and the grammar as JSON, not CSON", () => {
+  it("ships keymaps and menus as JSON, not CSON", () => {
     expect(exists("keymaps/main.json")).toBe(true);
     expect(exists("menus/main.json")).toBe(true);
-    expect(exists("grammars/jupyter.json")).toBe(true);
     expect(exists("keymaps/jupyter-next.cson")).toBe(false);
     expect(exists("menus/jupyter-next.cson")).toBe(false);
-    expect(exists("grammars/jupyter.cson")).toBe(false);
   });
 
   it("parses the keymap and menu, and every menu entry uses `command`", () => {
@@ -36,10 +33,10 @@ describe("jupyter-view package assets", () => {
     expect(JSON.stringify(menu)).not.toContain('"commands"');
   });
 
-  it("keeps the Jupyter grammar scope but exposes it as JSON", () => {
-    const grammar = JSON.parse(read("grammars/jupyter.json"));
-    expect(grammar.scopeName).toBe("source.jupyter");
-    expect(grammar.fileTypes).toContain("ipynb");
+  it("leaves notebook source grammar ownership to language-json", () => {
+    const pkg = JSON.parse(read("package.json"));
+    expect(pkg.files).not.toContain("grammars");
+    expect(exists("grammars/jupyter.json")).toBe(false);
   });
 
   it("ships a CSS stylesheet built on custom properties, not Less", () => {

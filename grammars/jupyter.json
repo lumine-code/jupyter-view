@@ -1,6 +1,0 @@
-{
-  "name": "Jupyter Notebook",
-  "scopeName": "source.jupyter",
-  "fileTypes": ["ipynb"],
-  "patterns": [{ "include": "source.json" }]
-}

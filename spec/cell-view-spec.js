@@ -56,30 +56,26 @@ describe("cell view", () => {
     expect(view.element.querySelector("lumine-text-editor.jupyter-cell-editor")).toBeTruthy();
   });
 
-  it("upgrades a TextMate fallback when the Tree-sitter grammar loads later", async () => {
+  it("falls back to Python when the optional IPython grammar is unavailable", async () => {
     await lumine.packages.activatePackage("language-python");
-    const grammars = lumine.grammars.getGrammars({ includeTreeSitter: true });
-    const treeSitter = grammars.find(
-      (grammar) => grammar.scopeName === "source.python.ipy" && grammar.type === "tree-sitter",
-    );
-    const textMate = grammars.find(
-      (grammar) => grammar.scopeName === "source.python.ipy" && grammar.type !== "tree-sitter",
-    );
-    expect(treeSitter).toBeDefined();
-    expect(textMate).toBeDefined();
+    await lumine.packages.activatePackage("language-ipython");
+    const ipython = lumine.grammars.grammarForScopeName("source.python.ipy");
+    expect(ipython).toBeDefined();
 
-    lumine.grammars.removeGrammar(treeSitter);
+    lumine.grammars.removeGrammar(ipython);
     try {
       view = mount(makeCell());
-      expect(view.editor.getGrammar()).toBe(textMate);
-
-      lumine.grammars.addGrammar(treeSitter);
-      expect(view.editor.getGrammar()).toBe(treeSitter);
+      expect(view.editor.getGrammar().scopeName).toBe("source.python");
     } finally {
-      if (!lumine.grammars.getGrammars({ includeTreeSitter: true }).includes(treeSitter)) {
-        lumine.grammars.addGrammar(treeSitter);
-      }
+      lumine.grammars.addGrammar(ipython);
     }
+  });
+
+  it("prefers the optional IPython grammar when it is available", async () => {
+    await lumine.packages.activatePackage("language-python");
+    await lumine.packages.activatePackage("language-ipython");
+    view = mount(makeCell());
+    expect(view.editor.getGrammar().scopeName).toBe("source.python.ipy");
   });
 
   it("renders markdown instead of an editor when it is not being edited", () => {
@@ -211,6 +207,7 @@ describe("cell view", () => {
   describe("cell grammar overrides", () => {
     beforeEach(async () => {
       await lumine.packages.activatePackage("language-python");
+      await lumine.packages.activatePackage("language-ipython");
       await lumine.packages.activatePackage("language-json");
     });
 
