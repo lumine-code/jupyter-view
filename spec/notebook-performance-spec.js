@@ -407,7 +407,8 @@ describe("notebook change tracking", () => {
     expect(restoredSourceEditor.getText()).toContain("undefined_name");
     expect(restoredSourceEditor.getPath()).toBe(restoredDocument.filePath);
     expect(restoredSourceEditor.getGrammar().scopeName).toBe("source.jupyter");
-    expect(lumine.textEditors.roleFor(restoredSourceEditor)).toBe("background");
+    expect(lumine.textEditors.roleFor(restoredSourceEditor)).toBeNull();
+    expect(lumine.textEditors.getEditors()).not.toContain(restoredSourceEditor);
 
     restoredEditor.destroy();
     restoredRegistry.destroy();

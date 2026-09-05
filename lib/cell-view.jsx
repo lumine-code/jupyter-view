@@ -337,10 +337,10 @@ class CellView {
     this.editorElement = lumine.views.getView(this.editor);
     this.editorElement.classList.add("jupyter-cell-editor");
 
-    // Register with Lumine's global text editor registry so packages
-    // (linters, formatters, etc.) and lumine.textEditors.observe() see this
-    // editor. The "fragment" role marks it as a piece of the notebook, so
-    // autocomplete shares words across cells and open documents.
+    // Register with Lumine's global text editor registry so cross-surface
+    // features and lumine.textEditors.observe() see this editor. The
+    // "fragment" role marks it as a piece of the notebook, so autocomplete
+    // shares words across cells and open documents.
     this.editorRegistryDisposable = lumine.textEditors.add(this.editor, { role: "fragment" });
 
     // Render-only linter registration: no provider ever lints a cell editor

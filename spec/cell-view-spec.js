@@ -257,7 +257,7 @@ describe("cell view", () => {
       expect(view.editor.getGrammar().scopeName).toBe("source.json");
 
       // What the grammar selector does on "Auto Detect".
-      lumine.textEditors.clearGrammarOverride(view.editor);
+      lumine.grammars.autoAssignLanguageMode(view.editor.getBuffer());
 
       expect(onLanguageChange).toHaveBeenCalledWith(null);
       expect(view.editor.getGrammar().scopeName).toBe("source.python.ipy");
