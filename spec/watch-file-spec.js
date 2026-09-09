@@ -45,6 +45,15 @@ describe("notebook file observation", () => {
     fs.copyFileSync(path.join(directory, "external.ipynb"), filePath);
     await globalThis.conditionPromise(() => document.getFileState() === FileState.UNMODIFIED);
   });
+  it("reconciles an external write that arrives while save notifications are deferred", async () => {
+    await document.save();
+    const contents = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    contents.cells[0].source = ["external after save"];
+    fs.writeFileSync(filePath, JSON.stringify(contents));
+    await globalThis.conditionPromise(() => document.getCell(0).source === "external after save");
+    expect(document.getFileState()).toBe(FileState.UNMODIFIED);
+  });
+
   it("retargets an editor move without replacing unsaved cells or their history", async () => {
     document.updateCellSource(0, "local edit");
     const cell = document.getCell(0);
