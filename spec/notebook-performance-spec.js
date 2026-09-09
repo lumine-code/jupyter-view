@@ -112,7 +112,8 @@ describe("notebook change tracking", () => {
     expect(document.getFileState()).toBe(FileState.MODIFIED);
 
     document._watchFile();
-    document.file.emitter.emit("did-delete");
+    fs.unlinkSync(filePath);
+    await document._handleFileChange();
     expect(document.getFileState()).toBe(FileState.REMOVED);
     document.savedHistoryStateId = document.currentHistoryStateId;
     document.savedRuntimeRevision = document.runtimeRevision;
