@@ -128,7 +128,8 @@ describe("package restoration lifecycle", () => {
       main.documentRegistry = previousRegistry;
       main.notebookEditors = previousEditors;
       main.notebookScrollmaps = previousScrollmaps;
-      fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5 });
+      await lumine.fileWatchClient.settlePendingTeardown();
+      fs.rmSync(dir, { recursive: true, force: true });
     }
   });
 });

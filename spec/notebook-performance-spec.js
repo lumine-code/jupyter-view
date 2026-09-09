@@ -12,7 +12,7 @@ describe("notebook change tracking", () => {
   let editors = [];
   let tempDirectories = [];
 
-  afterEach(() => {
+  afterEach(async () => {
     for (const editor of editors) {
       if (!editor._destroyed) editor.destroy();
     }
@@ -21,6 +21,7 @@ describe("notebook change tracking", () => {
     }
     editors = [];
     documents = [];
+    await lumine.fileWatchClient.settlePendingTeardown();
     for (const directory of tempDirectories) {
       fs.rmSync(directory, { recursive: true, force: true });
     }
@@ -413,6 +414,7 @@ describe("notebook change tracking", () => {
 
     restoredEditor.destroy();
     restoredRegistry.destroy();
+    await lumine.fileWatchClient.settlePendingTeardown();
     fs.rmSync(tempDirectory, { recursive: true, force: true });
   });
 });
