@@ -61,6 +61,7 @@ describe("notebook file observation", () => {
     const target = path.join(directory, "moved.ipynb");
     const rename = { oldPath: filePath, newPath: target, isDirectory: false };
     const move = lumine.workspace.beginFileMove([rename]);
+    await move.ready;
     fs.renameSync(filePath, target);
     await move.complete([rename]);
     expect(document.getPath()).toBe(target);
