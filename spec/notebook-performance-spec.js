@@ -191,7 +191,9 @@ describe("notebook change tracking", () => {
     await restored.reconcileRestoredFileState();
     expect(restored.getFileState()).toBe(FileState.MODIFIED);
 
-    fs.rmSync(filePath);
+    // The restored path is what must be absent. Renaming avoids Windows' delete-pending
+    // state, where unlink can succeed while a scanner still holds the old file open.
+    fs.renameSync(filePath, path.join(path.dirname(filePath), "removed.ipynb"));
     await restored.reconcileRestoredFileState();
     expect(restored.getFileState()).toBe(FileState.REMOVED);
   });
