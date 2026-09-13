@@ -28,11 +28,13 @@ describe("JupyterNotebookEditor text-editor resolution", () => {
     expect(editor.getFileTextEditor()).toBe(editor.getSourceEditor());
   });
 
-  it("names the active cell's editor as the embedded text editor and signals cell changes", () => {
+  it("names the active cell's editor only in edit mode and signals mode and cell changes", () => {
     const signals = [];
     editor.onDidChangeActiveTextEditors(() => signals.push(true));
 
     editor.setActiveCell(0);
+    expect(editor.getActiveEmbeddedTextEditor()).toBe(null);
+    editor.view.setMode("edit");
     const first = editor.getActiveEmbeddedTextEditor();
     expect(first).not.toBe(null);
     expect(first).toBe(editor.getCellEditor(1));
@@ -42,10 +44,32 @@ describe("JupyterNotebookEditor text-editor resolution", () => {
     const third = editor.getActiveEmbeddedTextEditor();
     expect(third).toBe(editor.getCellEditor(3));
     expect(third).not.toBe(first);
+
+    const signalCount = signals.length;
+    editor.view.setMode("command");
+    expect(signals.length).toBe(signalCount + 1);
+    expect(editor.getActiveEmbeddedTextEditor()).toBe(null);
+    editor.view.setMode("command");
+    expect(signals.length).toBe(signalCount + 1);
   });
 
   it("resolves no embedded editor for a rendered markdown cell", () => {
     editor.setActiveCell(1);
     expect(editor.getActiveEmbeddedTextEditor()).toBe(null);
+  });
+
+  it("resolves raw and editable markdown editors in edit mode", async () => {
+    document_.insertCell(3, "raw");
+    editor.setActiveCell(3);
+    editor.view.setMode("edit");
+    expect(editor.getActiveEmbeddedTextEditor()).toBe(
+      editor.getCellEditorById(document_.cells[3].id),
+    );
+
+    editor.setActiveCell(1);
+    await Promise.resolve();
+    expect(editor.getActiveEmbeddedTextEditor()).toBe(
+      editor.getCellEditorById(document_.cells[1].id),
+    );
   });
 });

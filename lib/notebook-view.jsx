@@ -6,6 +6,7 @@
 const etch = require("@lumine-code/etch");
 const { CompositeDisposable, Disposable } = require("lumine");
 const CellView = require("./cell-view");
+const { hasCellDrag, inspectCellDrag, readCellDrag } = require("./cell-drag");
 const { getGrammarForLanguage, getNotebookLanguage } = require("./notebook-language");
 
 const CELL_TYPES = [
@@ -47,13 +48,21 @@ class NotebookView {
     this.mode = "command"; // 'command' or 'edit'
     this.selectedCells = new Set(); // Set of selected cell indices
     this._selectionAnchor = null; // Anchor index for range-extension (shift+arrow / shift+click)
-    this.draggingCellIndex = null;
+    this.draggingCellId = null;
+    this.draggingCellIds = new Set();
+    this._dropIndicatorCellId = null;
+    this._dropIndicatorPosition = null;
+    this._dropIndicatorElement = null;
+    this._dropIndicatorClass = null;
+    this._dragLeaveFrame = null;
     this._autoScrollInterval = null;
     this._autoScrollSpeed = 0;
     this._mouseButtonDown = false; // Track mouse button state for selection
     this._pendingScrollY = 0;
     this._scrollAnimId = null;
     this._observedContainer = null;
+    this._dragContainer = null;
+    this._dragWindow = null;
     this.scrollCallbacks = new Set();
     this.selectionCallbacks = new Set();
     this._tooltips = new CompositeDisposable();
@@ -314,10 +323,11 @@ class NotebookView {
 
     const container = this.cellsContainer;
     if (container && this._observedContainer !== container) {
+      if (this._observedContainer) this._resizeObserver?.unobserve?.(this._observedContainer);
       this._observedContainer = container;
       this.applyScrollPastEnd();
       if (this._resizeObserver) this._resizeObserver.observe(container);
-      this.setupDragAutoScroll();
+      this.setupCellDragAndDrop();
     }
   }
 
@@ -327,21 +337,35 @@ class NotebookView {
     this._tooltips.add(lumine.tooltips.add(element, options));
   }
 
-  setupDragAutoScroll() {
-    if (!this.cellsContainer) return;
+  setupCellDragAndDrop() {
+    const container = this.cellsContainer;
+    if (!container) return;
 
     // Remove old listeners if they exist (prevents leaks on re-render)
-    if (this._dragOverHandler) {
-      this.cellsContainer.removeEventListener("dragover", this._dragOverHandler);
-      this.cellsContainer.removeEventListener("dragleave", this._dragLeaveHandler);
-      this.cellsContainer.removeEventListener("drop", this._dropHandler);
-      this.cellsContainer.removeEventListener("dragend", this._dragEndHandler);
+    if (this._dragContainer && this._dragOverHandler) {
+      this._dragContainer.removeEventListener("dragenter", this._dragEnterHandler, true);
+      this._dragContainer.removeEventListener("dragover", this._dragOverHandler, true);
+      this._dragContainer.removeEventListener("dragleave", this._dragLeaveHandler, true);
+      this._dragContainer.removeEventListener("drop", this._dropHandler, true);
     }
+    this._dragWindow?.removeEventListener("dragend", this._dragEndHandler, true);
+    this._dragWindow?.removeEventListener("blur", this._dragWindowBlurHandler, true);
+    this._dragContainer = container;
+    this._dragWindow = container.ownerDocument.defaultView;
 
     const SCROLL_ZONE = 60; // pixels from edge to trigger scroll
     const MAX_SCROLL_SPEED = 15; // max pixels per frame
 
+    this._dragEnterHandler = (event) => {
+      if (!this.claimCellDragEvent(event)) return;
+      this.updateCellDropIndicator(event);
+    };
+
     this._dragOverHandler = (event) => {
+      if (!this.claimCellDragEvent(event)) return;
+
+      this.updateCellDropIndicator(event);
+
       const rect = this.cellsContainer.getBoundingClientRect();
       const mouseY = event.clientY;
 
@@ -366,24 +390,240 @@ class NotebookView {
     };
 
     this._dragLeaveHandler = (event) => {
-      // Stop scrolling when drag leaves the container
-      if (!this.cellsContainer.contains(event.relatedTarget)) {
+      if (!this.acceptsCellDrag(event.dataTransfer)) return;
+      event.stopPropagation();
+      event.dataTransfer.dropEffect = "move";
+      this.cancelCellDragLeave();
+      if (this.cellsContainer.contains(event.relatedTarget)) {
+        return;
+      }
+      if (event.relatedTarget == null) {
+        // Chromium commonly reports a null relatedTarget while crossing child
+        // boundaries. Defer cleanup and hit-test the pointer; a matching
+        // enter/over cancels it, while a slow next dragover still keeps the
+        // cursor and insertion marker continuous inside the container.
+        const { clientX, clientY } = event;
+        this._dragLeaveFrame = requestAnimationFrame(() => {
+          this._dragLeaveFrame = null;
+          const pointerElement = this.element.ownerDocument.elementFromPoint?.(clientX, clientY);
+          if (pointerElement && this.cellsContainer.contains(pointerElement)) return;
+          this.stopAutoScroll();
+          this.clearCellDropIndicator();
+        });
+      } else {
         this.stopAutoScroll();
+        this.clearCellDropIndicator();
       }
     };
 
-    this._dropHandler = () => {
+    this._dropHandler = (event) => {
       this.stopAutoScroll();
+      if (!this.claimCellDragEvent(event)) return;
+      const target = this.getCellDropTarget(event);
+      const payload = readCellDrag(event.dataTransfer);
+      this.clearCellDropIndicator();
+      if (target && payload) this.performCellDrop(payload, target);
     };
 
-    this._dragEndHandler = () => {
-      this.stopAutoScroll();
+    this._dragEndHandler = (event) => {
+      if (
+        hasCellDrag(event.dataTransfer) ||
+        this.draggingCellIds.size > 0 ||
+        this._dropIndicatorCellId
+      ) {
+        this.finishCellDrag();
+      }
     };
+    this._dragWindowBlurHandler = () => this.finishCellDrag();
 
-    this.cellsContainer.addEventListener("dragover", this._dragOverHandler);
-    this.cellsContainer.addEventListener("dragleave", this._dragLeaveHandler);
-    this.cellsContainer.addEventListener("drop", this._dropHandler);
-    this.cellsContainer.addEventListener("dragend", this._dragEndHandler);
+    // The container owns this embedded interaction in capture phase. That
+    // keeps the accepted cursor continuous over cell editors and gaps, and
+    // prevents the document's unhandled-drop fallback from seeing it.
+    container.addEventListener("dragenter", this._dragEnterHandler, true);
+    container.addEventListener("dragover", this._dragOverHandler, true);
+    container.addEventListener("dragleave", this._dragLeaveHandler, true);
+    container.addEventListener("drop", this._dropHandler, true);
+    this._dragWindow.addEventListener("dragend", this._dragEndHandler, true);
+    this._dragWindow.addEventListener("blur", this._dragWindowBlurHandler, true);
+  }
+
+  claimCellDragEvent(event) {
+    if (!this.acceptsCellDrag(event.dataTransfer)) {
+      this.cancelCellDragLeave();
+      this.stopAutoScroll();
+      this.clearCellDropIndicator();
+      return false;
+    }
+    this.cancelCellDragLeave();
+    event.preventDefault();
+    event.stopPropagation();
+    event.dataTransfer.dropEffect = "move";
+    return true;
+  }
+
+  acceptsCellDrag(dataTransfer) {
+    const offer = inspectCellDrag(dataTransfer);
+    return offer?.sourceDocumentId === this.props.editor?.document?.id;
+  }
+
+  getCellDropTarget(event) {
+    const cells = this.props.editor?.document?.cells || [];
+    if (cells.length === 0 || !this.cellsContainer) return null;
+
+    const directElement = event.target?.closest?.(".jupyter-cell");
+    if (directElement && this.cellsContainer.contains(directElement)) {
+      const cellId = directElement.getAttribute("data-cell-id");
+      const cellIndex = cells.findIndex((cell) => cell.id === cellId);
+      if (cellIndex >= 0) {
+        const rect = directElement.getBoundingClientRect();
+        const after = event.clientY >= rect.top + rect.height / 2;
+        return this.cellDropTargetForBoundary(cellIndex + (after ? 1 : 0));
+      }
+    }
+
+    const entries = cells
+      .map((cell, index) => ({
+        index,
+        cellId: cell.id,
+        element: this.cellViews.get(cell.id)?.element,
+      }))
+      .filter((entry) => entry.element && this.cellsContainer.contains(entry.element));
+    if (entries.length === 0) return null;
+
+    for (const entry of entries) {
+      const rect = entry.element.getBoundingClientRect();
+      if (event.clientY < rect.top) {
+        return this.cellDropTargetForBoundary(entry.index);
+      }
+      if (event.clientY <= rect.bottom) {
+        const after = event.clientY >= rect.top + rect.height / 2;
+        return this.cellDropTargetForBoundary(entry.index + (after ? 1 : 0));
+      }
+    }
+    return this.cellDropTargetForBoundary(cells.length);
+  }
+
+  cellDropTargetForBoundary(boundaryIndex) {
+    const cells = this.props.editor?.document?.cells || [];
+    if (boundaryIndex < 0 || boundaryIndex > cells.length || cells.length === 0) return null;
+
+    const indicatorPosition = boundaryIndex < cells.length ? "above" : "below";
+    const indicatorCellId =
+      boundaryIndex < cells.length ? cells[boundaryIndex].id : cells[cells.length - 1].id;
+    const element = this.cellViews.get(indicatorCellId)?.element || null;
+    return {
+      boundaryIndex,
+      indicatorCellId,
+      indicatorPosition,
+      element,
+    };
+  }
+
+  updateCellDropIndicator(event) {
+    const target = this.getCellDropTarget(event);
+    const nextElement = target?.element || null;
+    const nextClass = target ? `drop-${target.indicatorPosition}` : null;
+    if (
+      nextElement === this._dropIndicatorElement &&
+      nextClass === this._dropIndicatorClass &&
+      nextElement?.classList.contains(nextClass)
+    )
+      return;
+    this.clearCellDropIndicator();
+    nextElement?.classList.add(nextClass);
+    this._dropIndicatorCellId = target?.indicatorCellId || null;
+    this._dropIndicatorPosition = target?.indicatorPosition || null;
+    this._dropIndicatorElement = nextElement;
+    this._dropIndicatorClass = nextClass;
+  }
+
+  clearCellDropIndicator() {
+    this.cellViews
+      .get(this._dropIndicatorCellId)
+      ?.element?.classList.remove("drop-above", "drop-below");
+    this._dropIndicatorElement?.classList.remove("drop-above", "drop-below");
+    this._dropIndicatorCellId = null;
+    this._dropIndicatorPosition = null;
+    this._dropIndicatorElement = null;
+    this._dropIndicatorClass = null;
+  }
+
+  cancelCellDragLeave() {
+    if (this._dragLeaveFrame != null) cancelAnimationFrame(this._dragLeaveFrame);
+    this._dragLeaveFrame = null;
+  }
+
+  performCellDrop(payload, target) {
+    const editor = this.props.editor;
+    const notebookDocument = editor?.document;
+    if (!notebookDocument || payload.sourceDocumentId !== notebookDocument.id) return false;
+
+    const cells = notebookDocument.cells || [];
+    const selectedIndices = payload.cellIds.map((cellId) =>
+      cells.findIndex((candidate) => candidate.id === cellId),
+    );
+
+    // Structural edits during a drag are allowed, but a missing source or
+    // target invalidates the entire operation rather than moving a subset.
+    if (selectedIndices.some((index) => index < 0)) return false;
+    if (target.boundaryIndex < 0 || target.boundaryIndex > cells.length) return false;
+    const before = cells.map((cell) => cell.id);
+    const selected = new Set(payload.cellIds);
+    const draggedIds = before.filter((cellId) => selected.has(cellId));
+    const remaining = before.filter((cellId) => !selected.has(cellId));
+    const adjustedInsertionIndex =
+      target.boundaryIndex - selectedIndices.filter((index) => index < target.boundaryIndex).length;
+    const expected = [
+      ...remaining.slice(0, adjustedInsertionIndex),
+      ...draggedIds,
+      ...remaining.slice(adjustedInsertionIndex),
+    ];
+
+    // An adjacent/self-equivalent drop is accepted without creating history.
+    if (expected.every((cellId, index) => cellId === before[index])) return false;
+
+    const previousActiveCellId = cells[editor.activeCellIndex]?.id || null;
+    editor.moveCells(selectedIndices, target.boundaryIndex);
+
+    const movedIndices = payload.cellIds
+      .map((cellId) => notebookDocument.cells.findIndex((cell) => cell.id === cellId))
+      .filter((index) => index >= 0)
+      .sort((a, b) => a - b);
+    const activeCellId = payload.cellIds.includes(previousActiveCellId)
+      ? previousActiveCellId
+      : payload.primaryCellId;
+    editor.setActiveCell(notebookDocument.cells.findIndex((cell) => cell.id === activeCellId));
+
+    this.replaceSelection(movedIndices);
+    return true;
+  }
+
+  beginCellDrag(payload) {
+    this.finishCellDrag();
+    this.draggingCellId = payload.primaryCellId;
+    this.draggingCellIds = new Set(payload.cellIds);
+    for (const cellId of payload.cellIds) {
+      this.cellViews.get(cellId)?.element?.classList.add("dragging");
+    }
+  }
+
+  isCellDragging(cellId) {
+    return this.draggingCellIds.has(cellId);
+  }
+
+  getCellDropPosition(cellId) {
+    return cellId === this._dropIndicatorCellId ? this._dropIndicatorPosition : null;
+  }
+
+  finishCellDrag() {
+    this.cancelCellDragLeave();
+    this.stopAutoScroll();
+    this.clearCellDropIndicator();
+    for (const cell of this.element.querySelectorAll(".jupyter-cell")) {
+      cell.classList.remove("dragging", "drop-above", "drop-below");
+    }
+    this.draggingCellId = null;
+    this.draggingCellIds.clear();
   }
 
   startAutoScroll() {
@@ -437,6 +677,16 @@ class NotebookView {
   }
 
   update(props) {
+    const nextCells = props.cells || this.props.cells || [];
+    const nextCellIds = new Set(nextCells.map((cell) => cell.id));
+    if (
+      this.draggingCellIds.size > 0 &&
+      Array.from(this.draggingCellIds).some((cellId) => !nextCellIds.has(cellId))
+    ) {
+      this.finishCellDrag();
+    } else if (this._dropIndicatorCellId && !nextCellIds.has(this._dropIndicatorCellId)) {
+      this.clearCellDropIndicator();
+    }
     this.props = { ...this.props, ...props };
     return etch.update(this);
   }
@@ -476,6 +726,7 @@ class NotebookView {
       // The classes, the indicator and the cells all read the mode, and the
       // keymap selectors need the class immediately.
       etch.updateSync(this);
+      this.props.editor?.notifyNotebookModeChange?.();
     }
   }
 
@@ -733,7 +984,12 @@ class NotebookView {
    * Clear all cell selections
    */
   clearSelection() {
-    this.selectedCells.clear();
+    this.replaceSelection([]);
+  }
+
+  /** Replace the complete selection and notify observers once. */
+  replaceSelection(indices) {
+    this.selectedCells = new Set(indices || []);
     this._selectionAnchor = null;
     this.updateCellSelectionClasses();
   }
@@ -853,12 +1109,8 @@ class NotebookView {
     return this.mode;
   }
 
-  setDraggingCell(index) {
-    this.draggingCellIndex = index;
-  }
-
   getDraggingCell() {
-    return this.draggingCellIndex;
+    return this.draggingCellId;
   }
 
   scrollUp() {
@@ -903,8 +1155,8 @@ class NotebookView {
       this._tooltips = null;
     }
 
-    // Stop any auto-scroll
-    this.stopAutoScroll();
+    // Stop any drag lifecycle work before destroying its DOM.
+    this.finishCellDrag();
 
     if (this._scrollAnimId) {
       cancelAnimationFrame(this._scrollAnimId);
@@ -917,17 +1169,23 @@ class NotebookView {
       this._handleGlobalMouseUp = null;
     }
 
-    // Remove drag scroll listeners
-    if (this.cellsContainer && this._dragOverHandler) {
-      this.cellsContainer.removeEventListener("dragover", this._dragOverHandler);
-      this.cellsContainer.removeEventListener("dragleave", this._dragLeaveHandler);
-      this.cellsContainer.removeEventListener("drop", this._dropHandler);
-      this.cellsContainer.removeEventListener("dragend", this._dragEndHandler);
+    // Remove cell drag listeners
+    if (this._dragContainer && this._dragOverHandler) {
+      this._dragContainer.removeEventListener("dragenter", this._dragEnterHandler, true);
+      this._dragContainer.removeEventListener("dragover", this._dragOverHandler, true);
+      this._dragContainer.removeEventListener("dragleave", this._dragLeaveHandler, true);
+      this._dragContainer.removeEventListener("drop", this._dropHandler, true);
     }
+    this._dragWindow?.removeEventListener("dragend", this._dragEndHandler, true);
+    this._dragWindow?.removeEventListener("blur", this._dragWindowBlurHandler, true);
+    this._dragContainer = null;
+    this._dragWindow = null;
+    this._dragEnterHandler = null;
     this._dragOverHandler = null;
     this._dragLeaveHandler = null;
     this._dropHandler = null;
     this._dragEndHandler = null;
+    this._dragWindowBlurHandler = null;
 
     this.scrollCallbacks.clear();
     this.selectionCallbacks.clear();

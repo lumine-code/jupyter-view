@@ -1,6 +1,8 @@
 const {
   getGrammarForLanguage,
   getGrammarScopesForLanguage,
+  getNotebookLanguage,
+  inferLanguageFromKernelName,
   languageIdForGrammar,
   normalizeLanguage,
 } = require("../lib/notebook-language");
@@ -20,6 +22,47 @@ describe("notebook language mapping", () => {
   it("normalizes VS Code spellings onto the table's ids", () => {
     expect(normalizeLanguage("shellscript")).toBe("shell");
     expect(normalizeLanguage("PowerShell")).toBe("pwsh");
+  });
+
+  it("uses kernelspec language before stale language_info and syntax hints", () => {
+    expect(
+      getNotebookLanguage({
+        kernelspec: { name: "ir", language: "R" },
+        language_info: {
+          name: "python",
+          codemirror_mode: "julia",
+          mimetype: "text/x-python",
+          file_extension: ".py",
+        },
+      }),
+    ).toBe("r");
+  });
+
+  it("falls through language_info fields in their declared order", () => {
+    expect(
+      getNotebookLanguage({
+        language_info: {
+          name: "Julia",
+          codemirror_mode: "python",
+          mimetype: "text/x-rsrc",
+          file_extension: ".r",
+        },
+      }),
+    ).toBe("julia");
+    expect(
+      getNotebookLanguage({
+        language_info: { codemirror_mode: { name: "C++" }, mimetype: "text/x-python" },
+      }),
+    ).toBe("cpp");
+    expect(getNotebookLanguage({ language_info: { file_extension: ".jl" } })).toBe("julia");
+  });
+
+  it("recognizes versioned kernelspec names before falling back to python", () => {
+    expect(inferLanguageFromKernelName({ name: "python-3.13" })).toBe("python");
+    expect(inferLanguageFromKernelName({ name: "ir-4.5" })).toBe("r");
+    expect(inferLanguageFromKernelName({ name: "julia-1.11" })).toBe("julia");
+    expect(inferLanguageFromKernelName({ name: "xeus-cpp17" })).toBe("cpp");
+    expect(getNotebookLanguage({ kernelspec: { name: "custom-runtime" } })).toBe("python");
   });
 
   it("resolves a stored scope name verbatim", () => {

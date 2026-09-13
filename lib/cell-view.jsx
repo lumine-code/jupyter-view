@@ -8,6 +8,7 @@ const { CompositeDisposable } = require("lumine");
 const OutputView = require("./output-view");
 const { renderMarkdown } = require("./markdown");
 const { getGrammarScopesForLanguage, languageIdForGrammar } = require("./notebook-language");
+const { writeCellDrag } = require("./cell-drag");
 
 // The cell's own language id, when a grammar was picked for it explicitly.
 // Read straight off the metadata so plain cell snapshots work too.
@@ -22,10 +23,6 @@ function resolveGrammar(targetScopes) {
   }
   return null;
 }
-
-// MIME type tagging the cell-reorder drag payload, so external file/text drops
-// (which carry a text/plain path) are ignored instead of failing JSON.parse.
-const CELL_DRAG_MIME = "application/x-jupyter-cell";
 
 // Output types worth showing; the rest (status, execute_input) are protocol
 // bookkeeping.
@@ -116,13 +113,18 @@ class CellView {
   }
 
   getCellClasses() {
-    const { cell, active, selected } = this.props;
+    const { cell, active, selected, notebookView } = this.props;
+    const dragging = notebookView?.isCellDragging?.(cell.id) || false;
+    const dropPosition = notebookView?.getCellDropPosition?.(cell.id) || null;
     return [
       "jupyter-cell",
       `jupyter-cell-${cell.type}`,
       active ? "active" : "",
       selected ? "selected" : "",
       cell.status === "running" ? "running" : "",
+      dragging ? "dragging" : "",
+      dropPosition === "above" ? "drop-above" : "",
+      dropPosition === "below" ? "drop-below" : "",
     ]
       .filter(Boolean)
       .join(" ");
@@ -256,10 +258,6 @@ class CellView {
         className={this.getCellClasses()}
         attributes={{ "data-cell-id": this.props.cell.id }}
         onClick={this.handleClick}
-        onDragOver={this.handleDragOver}
-        onDragEnter={this.handleDragEnter}
-        onDragLeave={this.handleDragLeave}
-        onDrop={this.handleDrop}
       >
         {this.renderGutter()}
         <div className="cell-content">
@@ -464,174 +462,54 @@ class CellView {
   }
 
   handleDragStart(event) {
-    const { cell, index, notebookView, editor } = this.props;
+    const { cell, notebookView, editor } = this.props;
+    const notebookDocument = editor?.document;
+    const cells = notebookDocument?.cells || [];
+    const cellIndex = cells.findIndex((candidate) => candidate.id === cell.id);
+
+    if (!notebookDocument?.id || cellIndex < 0) {
+      event.preventDefault();
+      return;
+    }
 
     // Get selected cells from notebook view, or just use this cell's index
-    let selectedIndices = [index];
+    let selectedIndices = [cellIndex];
     if (notebookView) {
-      const selected = notebookView.getSelectedCells();
-      if (selected.length > 0 && selected.includes(index)) {
+      const selected = notebookView
+        .getSelectedCells()
+        .filter((selectedIndex) => selectedIndex >= 0 && selectedIndex < cells.length);
+      if (selected.length > 0 && selected.includes(cellIndex)) {
         // Current cell is in selection, drag all selected cells
         selectedIndices = selected;
       } else {
         // Current cell is not in selection - replace selection with just this cell
-        notebookView.clearSelection();
-        notebookView.extendSelection(index);
-        if (editor) editor.setActiveCell(index);
-        selectedIndices = [index];
+        notebookView.replaceSelection([cellIndex]);
+        editor.setActiveCell(cellIndex);
+        selectedIndices = [cellIndex];
       }
     }
+    selectedIndices.sort((a, b) => a - b);
+    const cellIds = selectedIndices.map((selectedIndex) => cells[selectedIndex].id);
 
     event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData(
-      CELL_DRAG_MIME,
-      JSON.stringify({
-        cellId: cell.id,
-        fromIndex: index,
-        selectedIndices: selectedIndices,
-      }),
-    );
-
-    // Add dragging class to all selected cells
-    if (notebookView && selectedIndices.length > 1) {
-      const cells = this.props.editor?.document?.cells || [];
-      selectedIndices.forEach((i) => {
-        const cellView = notebookView.cellViews.get(cells[i]?.id);
-        if (cellView && cellView.element) {
-          cellView.element.classList.add("dragging");
-        }
-      });
-    } else {
-      this.element.classList.add("dragging");
-    }
+    const payload = writeCellDrag(event.dataTransfer, {
+      sourceDocumentId: notebookDocument.id,
+      primaryCellId: cell.id,
+      cellIds,
+    });
 
     if (notebookView) {
-      notebookView.setDraggingCell(index);
+      notebookView.beginCellDrag(payload);
+    } else {
+      this.element.classList.add("dragging");
     }
   }
 
   handleDragEnd() {
-    // Remove dragging class from all cells
-    const cells = document.querySelectorAll(".jupyter-cell");
-    cells.forEach((cell) => {
-      cell.classList.remove("dragging", "drop-above", "drop-below");
-    });
-
     if (this.props.notebookView) {
-      this.props.notebookView.setDraggingCell(null);
-    }
-  }
-
-  handleDragOver(event) {
-    // Only react to cell-reorder drags; let external drops use default handling.
-    if (!event.dataTransfer.types.includes(CELL_DRAG_MIME)) {
-      return;
-    }
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-
-    const rect = this.element.getBoundingClientRect();
-    const midY = rect.top + rect.height / 2;
-
-    this.element.classList.remove("drop-above", "drop-below");
-    if (event.clientY < midY) {
-      this.element.classList.add("drop-above");
+      this.props.notebookView.finishCellDrag();
     } else {
-      this.element.classList.add("drop-below");
-    }
-  }
-
-  handleDragEnter(event) {
-    if (!event.dataTransfer.types.includes(CELL_DRAG_MIME)) {
-      return;
-    }
-    event.preventDefault();
-  }
-
-  handleDragLeave(event) {
-    if (!this.element.contains(event.relatedTarget)) {
-      this.element.classList.remove("drop-above", "drop-below");
-    }
-  }
-
-  handleDrop(event) {
-    const raw = event.dataTransfer.getData(CELL_DRAG_MIME);
-    if (!raw) {
-      // Not a cell reorder (e.g. an external file or text drop); leave it to the
-      // default handler instead of throwing on JSON.parse.
-      return;
-    }
-
-    event.preventDefault();
-
-    this.element.classList.remove("drop-above", "drop-below");
-
-    try {
-      const data = JSON.parse(raw);
-      const selectedIndices = data.selectedIndices || [data.fromIndex];
-      const { index: toIndex, editor, notebookView } = this.props;
-
-      if (selectedIndices.length === 0) {
-        return;
-      }
-
-      // Don't drop onto a cell that's being dragged
-      if (selectedIndices.includes(toIndex)) {
-        return;
-      }
-
-      const rect = this.element.getBoundingClientRect();
-      const midY = rect.top + rect.height / 2;
-      const dropAbove = event.clientY < midY;
-
-      let targetIndex = dropAbove ? toIndex : toIndex + 1;
-
-      if (editor) {
-        const previousActiveIndex = editor.activeCellIndex;
-        let newFirstIndex;
-        let movedCount;
-        let newActiveIndex;
-
-        if (selectedIndices.length === 1) {
-          // Single cell move
-          const fromIndex = selectedIndices[0];
-          if (fromIndex < targetIndex) {
-            targetIndex--;
-          }
-          if (fromIndex !== targetIndex) {
-            editor.moveCell(fromIndex, targetIndex);
-          }
-          newFirstIndex = targetIndex;
-          movedCount = 1;
-          newActiveIndex = targetIndex;
-        } else {
-          // Multiple cells move - move them as a group
-          const sorted = [...selectedIndices].sort((a, b) => a - b);
-          const cellsBeforeTarget = sorted.filter((i) => i < targetIndex).length;
-          newFirstIndex = targetIndex - cellsBeforeTarget;
-          movedCount = sorted.length;
-          editor.moveCells(selectedIndices, targetIndex);
-
-          // Map previous active cell to its new position in the moved block
-          const posInSelection = sorted.indexOf(previousActiveIndex);
-          newActiveIndex = posInSelection >= 0 ? newFirstIndex + posInSelection : newFirstIndex;
-        }
-
-        // Restore active cell to the moved cell's new position
-        editor.setActiveCell(newActiveIndex);
-
-        // Preserve selection on the moved cells at their new positions
-        if (notebookView) {
-          notebookView.clearSelection();
-          if (movedCount > 1) {
-            for (let i = 0; i < movedCount; i++) {
-              notebookView.extendSelection(newFirstIndex + i);
-            }
-          }
-        }
-      }
-    } catch (e) {
-      console.error("Drop error:", e);
+      this.element.classList.remove("dragging", "drop-above", "drop-below");
     }
   }
 
@@ -674,7 +552,19 @@ class CellView {
       } finally {
         this._applyingGrammar = false;
       }
-    } else if (targetScopes?.length && !this._grammarRetryScheduled) {
+    } else {
+      // An unavailable notebook language, and raw cells, are valid. Clear a
+      // grammar left by the previous kernel or cell type while waiting for a
+      // matching package; syntax never decides whether the kernel can run.
+      this._applyingGrammar = true;
+      try {
+        lumine.grammars.assignLanguageMode(this.editor.getBuffer(), null);
+      } finally {
+        this._applyingGrammar = false;
+      }
+    }
+
+    if (!grammar && targetScopes?.length && !this._grammarRetryScheduled) {
       // Grammar not found - might not be loaded yet during restore
       // Schedule a retry after grammars are loaded
       this._grammarRetryScheduled = true;

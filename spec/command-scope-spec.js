@@ -145,6 +145,28 @@ describe("jupyter-view notebook resolution", () => {
     expect(active.document.getCellCount()).toBe(before);
   });
 
+  it("stops cell grammar selection in command mode but lets edit mode reach it", () => {
+    const grammarHandler = jasmine.createSpy("grammar handler");
+    const disposable = lumine.commands.add(
+      "lumine-workspace",
+      "grammar-selector:show",
+      grammarHandler,
+    );
+    const cellElement = lumine.views.getView(dispatched.getCellEditor(1));
+
+    try {
+      expect(dispatched.view.getMode()).toBe("command");
+      lumine.commands.dispatch(cellElement, "grammar-selector:show");
+      expect(grammarHandler).not.toHaveBeenCalled();
+
+      dispatched.view.setMode("edit");
+      lumine.commands.dispatch(cellElement, "grammar-selector:show");
+      expect(grammarHandler).toHaveBeenCalledTimes(1);
+    } finally {
+      disposable.dispose();
+    }
+  });
+
   it("falls back to the active notebook when nothing names one", () => {
     const before = active.document.getCellCount();
 

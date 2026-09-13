@@ -55,6 +55,8 @@ The registry answers with documents and change notifications:
 
 A notebook editor carries a `document` holding the cells, and a `view` for the rendered UI. A document handed out by `observeDocuments` may still be loading — its cells and metadata fill in through its own events (`onDidLoad`, `onDidReload`, `onDidChange`), so treat the document as live rather than reading it once.
 
+The editor's `getFileTextEditor()` is the `.ipynb` identity used by file-oriented status controls. Its encoding is read-only UTF-8, while `getLineEndings()`, `setLineEnding(value)`, and `onDidChangeLineEndings(callback)` expose the physical LF/CRLF state that notebook saves preserve. `getActiveEmbeddedTextEditor()` returns a cell editor only in edit mode, so grammar UI is hidden in command mode.
+
 ## Minimal example
 
 ```js
