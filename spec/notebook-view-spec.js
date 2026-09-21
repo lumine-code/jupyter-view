@@ -105,6 +105,47 @@ describe("notebook view", () => {
     expect(selected[0].getAttribute("data-cell-id")).toBe("b");
   });
 
+  it("keeps rendered markdown color stable between cell and background clicks", async () => {
+    Promise.resolve();
+    lumine.hooks.trigger("core:loaded-shell-environment");
+    await lumine.packages.activatePackage("jupyter-view");
+
+    const host = document.createElement("div");
+    host.className = "jupyter-view";
+    host.style.setProperty("--text-color", "rgb(12, 34, 56)");
+    const themeRule = document.createElement("style");
+    themeRule.textContent = ".selected { color: rgb(210, 20, 30); }";
+    document.head.appendChild(themeRule);
+    jasmine.attachToDOM(host);
+
+    try {
+      view = mount([cell("a", { type: "markdown", source: "# Head" })]);
+      host.appendChild(view.element);
+      const cellElement = view.cellViews.get("a").element;
+      const heading = cellElement.querySelector("h1");
+
+      cellElement
+        .querySelector(".cell-gutter")
+        .dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+      expect(view.getMode()).toBe("command");
+      expect(cellElement.classList.contains("active")).toBe(true);
+      expect(cellElement.classList.contains("selected")).toBe(true);
+      const selectedColor = getComputedStyle(heading).color;
+
+      view.cellsContainer.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true }),
+      );
+      expect(view.getMode()).toBe("command");
+      expect(cellElement.classList.contains("active")).toBe(true);
+      expect(cellElement.classList.contains("selected")).toBe(false);
+      expect(selectedColor).toBe("rgb(12, 34, 56)");
+      expect(getComputedStyle(heading).color).toBe(selectedColor);
+    } finally {
+      themeRule.remove();
+      host.remove();
+    }
+  });
+
   it("exposes its cell views by id", () => {
     view = mount([cell("a"), cell("b")]);
 

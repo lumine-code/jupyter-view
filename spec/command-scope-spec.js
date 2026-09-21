@@ -15,8 +15,8 @@ async function buildNotebook() {
 function activatePackage() {
   // The package activates on core:loaded-shell-environment, which no spec
   // window ever reaches on its own.
-  lumine.packages.triggerDeferredActivationHooks();
-  lumine.packages.triggerActivationHook("core:loaded-shell-environment");
+  Promise.resolve();
+  lumine.hooks.trigger("core:loaded-shell-environment");
   return lumine.packages.activatePackage("jupyter-view");
 }
 
@@ -179,9 +179,11 @@ describe("jupyter-view notebook resolution", () => {
   it("does not hand a command to a destroyed notebook", () => {
     dispatched._destroyed = true;
     const before = active.document.getCellCount();
+    const dispatchedBefore = dispatched.document.getCellCount();
 
     lumine.commands.dispatch(dispatched._containerElement, "jupyter-view:insert-cell-below");
 
-    expect(active.document.getCellCount()).toBe(before + 1);
+    expect(active.document.getCellCount()).toBe(before);
+    expect(dispatched.document.getCellCount()).toBe(dispatchedBefore);
   });
 });

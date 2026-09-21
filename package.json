@@ -45,9 +45,6 @@
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
-  "activationHooks": [
-    "core:loaded-shell-environment"
-  ],
   "deserializers": {
     "JupyterNotebookEditor": "deserializeNotebookEditor"
   },
