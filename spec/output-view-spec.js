@@ -73,6 +73,14 @@ describe("output view", () => {
       expect(img.draggable).toBe(false);
     });
 
+    it("renders a WebP image from its base64 data", () => {
+      view = mount([{ output_type: "display_data", data: { "image/webp": "AAAA" } }]);
+
+      const img = view.element.querySelector("img.output-image");
+      expect(img.getAttribute("src")).toBe("data:image/webp;base64,AAAA");
+      expect(img.draggable).toBe(false);
+    });
+
     it("shows the plain text of a bundle it cannot render richly", () => {
       view = mount([
         {

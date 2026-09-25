@@ -18,7 +18,7 @@ function asText(value) {
   return value == null ? "" : String(value);
 }
 
-const FALLBACK_IMAGE_MIMES = ["image/png", "image/jpeg", "image/gif"];
+const FALLBACK_IMAGE_MIMES = ["image/webp", "image/png", "image/jpeg", "image/gif"];
 
 /** The readable-without-the-hub subset: text, images, streams, error text. */
 function renderFallbackOutput(output) {
