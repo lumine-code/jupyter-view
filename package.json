@@ -19,11 +19,6 @@
   "engines": {
     "lumine": "^1.0.0"
   },
-  "backgroundTips": [
-    "You can start a Jupyter notebook from scratch with {{ 'jupyter-view:new-notebook' | keystroke }}",
-    "In a notebook you can turn the selected cell into Markdown with {{ 'jupyter-view:change-cell-to-markdown' | keystroke }}",
-    "Language servers reach inside notebooks: completions, hover and diagnostics work in cells when an ide package serves the cell language."
-  ],
   "specPackages": [
     "language-ipython",
     "language-json",
@@ -47,6 +42,43 @@
   },
   "deserializers": {
     "JupyterNotebookEditor": "deserializeNotebookEditor"
+  },
+  "providedServices": {
+    "jupyter.notebook": {
+      "versions": {
+        "1.0.0": "provideJupyterNotebook"
+      }
+    },
+    "jupyter.adapter": {
+      "versions": {
+        "1.0.0": "provideJupyterAdapter"
+      }
+    },
+    "linter.adapter": {
+      "versions": {
+        "1.0.0": "provideLinterAdapter"
+      }
+    },
+    "linter.ui": {
+      "versions": {
+        "1.0.0": "provideLinterUI"
+      }
+    },
+    "navigation.adapter": {
+      "versions": {
+        "1.0.0": "provideNavigationAdapter"
+      }
+    },
+    "search.adapter": {
+      "versions": {
+        "1.0.0": "provideSearchAdapter"
+      }
+    },
+    "background-tips.provider": {
+      "versions": {
+        "1.0.0": "provideBackgroundTips"
+      }
+    }
   },
   "consumedServices": {
     "ide-client": {
@@ -82,38 +114,6 @@
     "linter.editors": {
       "versions": {
         "^1.0.0": "consumeLinterEditors"
-      }
-    }
-  },
-  "providedServices": {
-    "jupyter.notebook": {
-      "versions": {
-        "1.0.0": "provideJupyterNotebook"
-      }
-    },
-    "jupyter.adapter": {
-      "versions": {
-        "1.0.0": "provideJupyterAdapter"
-      }
-    },
-    "linter.adapter": {
-      "versions": {
-        "1.0.0": "provideLinterAdapter"
-      }
-    },
-    "linter.ui": {
-      "versions": {
-        "1.0.0": "provideLinterUI"
-      }
-    },
-    "navigation.adapter": {
-      "versions": {
-        "1.0.0": "provideNavigationAdapter"
-      }
-    },
-    "search.adapter": {
-      "versions": {
-        "1.0.0": "provideSearchAdapter"
       }
     }
   },
