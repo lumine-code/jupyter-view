@@ -11,6 +11,7 @@ describe("jupyter adapter kernel language", () => {
     await lumine.packages.activatePackage("language-python");
     await lumine.packages.activatePackage("language-ipython");
     await lumine.packages.activatePackage("language-json");
+    await lumine.packages.activatePackage("language-text");
     document_ = new NotebookDocument(null);
     await document_.initialize();
     editor = new JupyterNotebookEditor(document_);
@@ -49,9 +50,9 @@ describe("jupyter adapter kernel language", () => {
       "julia",
     );
     expect(adapter.getKernelLanguage({ name: "ir", language: "R" })).toBe("r");
-    expect(adapter.getKernelGrammar({ name: "no-grammar", language: "unobtainium" })).toBe(
-      lumine.grammars.nullGrammar,
-    );
+    expect(
+      adapter.getKernelGrammar({ name: "no-grammar", language: "unobtainium" }).scopeName,
+    ).toBe("text.plain");
   });
 
   it("atomically replaces kernelspec and language_info after a successful binding", () => {
@@ -109,7 +110,7 @@ describe("jupyter adapter kernel language", () => {
     sourceEditor.setText(JSON.stringify(source, null, 2));
     await globalThis.conditionPromise(() => adapter.getKernelLanguage() === "unobtainium");
     await globalThis.conditionPromise(
-      () => editor.getCellEditorById(otherCell.id)?.getGrammar() === lumine.grammars.nullGrammar,
+      () => editor.getCellEditorById(otherCell.id)?.getGrammar()?.scopeName === "text.plain",
     );
 
     expect(update).toHaveBeenCalled();
