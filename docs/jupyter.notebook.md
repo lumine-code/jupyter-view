@@ -57,6 +57,10 @@ A notebook editor carries a `document` holding the cells, and a `view` for the r
 
 The editor's `getFileTextEditor()` is the `.ipynb` identity used by file-oriented status controls. Its encoding is read-only UTF-8, while `getLineEndings()`, `setLineEnding(value)`, and `onDidChangeLineEndings(callback)` expose the physical LF/CRLF state that notebook saves preserve. `getActiveEmbeddedTextEditor()` returns a cell editor only in edit mode, so grammar UI is hidden in command mode.
 
+Cell types and boundaries come from the notebook document. Code cells use original language packages; a Python cell does not interpret `# %%` comments as document boundaries. In Python notebooks, a leading cell magic selects the body grammar and excludes its header from syntax parsing through the editor's buffer-owned root ranges. The full header remains in saved and executed source. A manual cell language overrides body syntax without changing the shared notebook kernel.
+
+Line magics, shell escapes and help syntax remain valid inputs to the IPython kernel but may produce Python parser errors in notebook cells. Full IPython document syntax belongs to `.ipy` files handled by `language-ipython`.
+
 ## Minimal example
 
 ```js

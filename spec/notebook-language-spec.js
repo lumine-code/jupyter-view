@@ -75,10 +75,10 @@ describe("notebook language mapping", () => {
     expect(getGrammarForLanguage("json")).toBe(json);
   });
 
-  it("keeps the ipython grammar as plain python", () => {
+  it("reserves the IPython document grammar for its own explicit scope", () => {
     const ipy = lumine.grammars.grammarForScopeName("source.python.ipy");
-    expect(languageIdForGrammar(ipy)).toBe("python");
-    expect(getGrammarForLanguage("python")).toBe(ipy);
+    expect(languageIdForGrammar(ipy)).toBe("source.python.ipy");
+    expect(getGrammarForLanguage("python").scopeName).toBe("source.python");
   });
 
   it("falls back to the scope name when no id resolves back", () => {

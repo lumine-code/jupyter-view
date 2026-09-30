@@ -365,6 +365,11 @@
       .jupyter-cell-editor {
         border: none;
         background: transparent;
+
+        .line.jupyter-cell-magic {
+          color: var(--syntax-color-function, var(--text-color));
+          font-style: italic;
+        }
       }
     }
   }

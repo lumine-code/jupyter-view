@@ -20,9 +20,13 @@
     "lumine": "^1.0.0"
   },
   "specPackages": [
+    "language-gfm",
+    "language-html",
     "language-ipython",
     "language-json",
-    "language-python"
+    "language-python",
+    "language-shellscript",
+    "language-text"
   ],
   "main": "./lib/main",
   "files": [

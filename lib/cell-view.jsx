@@ -7,7 +7,12 @@ const etch = require("@lumine-code/etch");
 const { CompositeDisposable } = require("lumine");
 const OutputView = require("./output-view");
 const { renderMarkdown } = require("./markdown");
-const { getGrammarScopesForLanguage, languageIdForGrammar } = require("./notebook-language");
+const {
+  getGrammarScopesForLanguage,
+  languageIdForGrammar,
+  normalizeLanguage,
+} = require("./notebook-language");
+const { CellMagicPrefix, languageForMagic } = require("./cell-magic");
 const { writeCellDrag } = require("./cell-drag");
 
 // The cell's own language id, when a grammar was picked for it explicitly.
@@ -328,8 +333,16 @@ class CellView {
 
     this.editor.setText(cell.source);
 
+    this._magicPrefix = new CellMagicPrefix(this.editor.getBuffer());
+    this.rootRangesDisposable = lumine.grammars.setRootLanguageRanges(
+      this.editor.getBuffer(),
+      () => (this.cellMagic() ? [this._magicPrefix.bodyRange()] : null),
+    );
+    this._lastKnownLanguage = this.grammarLanguage();
+
     // Apply syntax highlighting grammar
     this.applyGrammar();
+    this.refreshCellMagic();
 
     // Get the editor element
     this.editorElement = lumine.views.getView(this.editor);
@@ -370,6 +383,7 @@ class CellView {
 
     // Listen for changes - track dirty state to avoid race conditions
     this.editorChangeSubscription = this.editor.onDidChange(() => {
+      this.refreshCellMagic();
       this._editorIsDirty = true;
       if (!this._updatingFromExternal && this._localChangeSourceRevision === null) {
         this._localChangeSourceRevision = this.props.cellSourceRevision || 0;
@@ -516,7 +530,43 @@ class CellView {
   // The tracked value deciding when the grammar must be re-applied: the cell's
   // own language when one was picked, the notebook's otherwise.
   grammarLanguage() {
-    return cellLanguageOf(this.props.cell) || this.props.notebookLanguage || null;
+    const magic = this.cellMagic();
+    return (
+      cellLanguageOf(this.props.cell) ||
+      (magic ? languageForMagic(magic.name) : this.props.notebookLanguage) ||
+      null
+    );
+  }
+
+  cellMagic() {
+    if (
+      this.props.cell?.type !== "code" ||
+      normalizeLanguage(this.props.notebookLanguage || "python") !== "python"
+    )
+      return null;
+    return this._magicPrefix?.get() || null;
+  }
+
+  refreshCellMagic() {
+    if (!this.editor) return;
+    const magic = this.cellMagic();
+    const marker = magic ? this._magicPrefix.marker : null;
+    if (marker !== this._magicDecorationMarker) {
+      this._magicDecoration?.destroy();
+      this._magicDecorationMarker = marker;
+      this._magicDecoration = marker
+        ? this.editor.decorateMarker(marker, {
+            type: "line",
+            class: "jupyter-cell-magic",
+            onlyHead: true,
+          })
+        : null;
+    }
+    const language = this.grammarLanguage();
+    if (language !== this._lastKnownLanguage) {
+      this._lastKnownLanguage = language;
+      this.applyGrammar();
+    }
   }
 
   // The scopes the cell's type and the notebook's language imply, ignoring any
@@ -527,7 +577,10 @@ class CellView {
       return ["source.gfm", "text.md", "text.md.basic"];
     }
     if (cell.type === "code") {
-      return getGrammarScopesForLanguage(this.props.notebookLanguage || "python");
+      const magic = this.cellMagic();
+      return getGrammarScopesForLanguage(
+        magic ? languageForMagic(magic.name) : this.props.notebookLanguage || "python",
+      );
     }
     return null;
   }
@@ -540,9 +593,16 @@ class CellView {
     const targetScopes = cellLanguage
       ? getGrammarScopesForLanguage(cellLanguage)
       : this.defaultGrammarTargets();
-    const grammar = resolveGrammar(targetScopes);
+    const requestedGrammar = resolveGrammar(targetScopes);
+    const grammar = requestedGrammar || resolveGrammar(["text.plain"]);
 
     if (grammar) {
+      if (requestedGrammar || !targetScopes?.length) {
+        this._grammarRetrySubscription?.dispose();
+        this._grammarRetrySubscription = null;
+        clearTimeout(this._grammarRetryTimer);
+        this._grammarRetryScheduled = false;
+      }
       // Register the scope as a language override instead of installing the
       // currently available grammar object directly, so the registry can
       // replace it when language packages finish loading during restoration.
@@ -564,20 +624,23 @@ class CellView {
       }
     }
 
-    if (!grammar && targetScopes?.length && !this._grammarRetryScheduled) {
+    if (!requestedGrammar && targetScopes?.length && !this._grammarRetryScheduled) {
       // Grammar not found - might not be loaded yet during restore
       // Schedule a retry after grammars are loaded
       this._grammarRetryScheduled = true;
-      const disposable = lumine.grammars.onDidAddGrammar(() => {
-        disposable.dispose();
+      this._grammarRetrySubscription = lumine.grammars.onDidAddGrammar(() => {
+        this._grammarRetrySubscription?.dispose();
+        this._grammarRetrySubscription = null;
+        clearTimeout(this._grammarRetryTimer);
         this._grammarRetryScheduled = false;
         this.applyGrammar();
       });
       // Also try again after a short delay as a fallback
-      setTimeout(() => {
+      this._grammarRetryTimer = setTimeout(() => {
         if (this._grammarRetryScheduled && this.editor) {
           this._grammarRetryScheduled = false;
-          disposable.dispose();
+          this._grammarRetrySubscription?.dispose();
+          this._grammarRetrySubscription = null;
           this.applyGrammar();
         }
       }, 1000);
@@ -655,6 +718,8 @@ class CellView {
       this.applyGrammar();
     }
 
+    this.refreshCellMagic();
+
     return etch.update(this);
   }
 
@@ -705,6 +770,14 @@ class CellView {
 
   destroyEditor() {
     const hadEditor = !!this.editor;
+    this._magicDecoration?.destroy();
+    this._magicDecoration = null;
+    this._magicDecorationMarker = null;
+    this._grammarRetrySubscription?.dispose();
+    this._grammarRetrySubscription = null;
+    clearTimeout(this._grammarRetryTimer);
+    this._grammarRetryTimer = null;
+    this._grammarRetryScheduled = false;
     if (this.editorGrammarSubscription) {
       this.editorGrammarSubscription.dispose();
       this.editorGrammarSubscription = null;
@@ -737,6 +810,10 @@ class CellView {
       this.editor.destroy();
       this.editor = null;
     }
+    this.rootRangesDisposable?.dispose();
+    this.rootRangesDisposable = null;
+    this._magicPrefix?.destroy();
+    this._magicPrefix = null;
     this.editorElement = null;
     if (hadEditor) {
       this.props.editor?.notifyCellEditorChange?.(this.props.cell.id, null);

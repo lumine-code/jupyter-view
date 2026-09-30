@@ -41,7 +41,7 @@ describe("jupyter adapter kernel language", () => {
     const target = adapter.getRunTarget(document_.getCell(0).id);
     expect(target.grammar.scopeName).toBe("source.json");
     expect(adapter.getKernelLanguage()).toBe("python");
-    expect(adapter.getKernelGrammar().scopeName).toBe("source.python.ipy");
+    expect(adapter.getKernelGrammar().scopeName).toBe("source.python");
   });
 
   it("derives an explicit kernel's language without consulting a cell grammar", () => {

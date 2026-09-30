@@ -56,7 +56,7 @@ describe("cell view", () => {
     expect(view.element.querySelector("lumine-text-editor.jupyter-cell-editor")).toBeTruthy();
   });
 
-  it("falls back to Python when the optional IPython grammar is unavailable", async () => {
+  it("uses Python when the document IPython grammar is unavailable", async () => {
     await lumine.packages.activatePackage("language-python");
     await lumine.packages.activatePackage("language-ipython");
     const ipython = lumine.grammars.grammarForScopeName("source.python.ipy");
@@ -71,11 +71,11 @@ describe("cell view", () => {
     }
   });
 
-  it("prefers the optional IPython grammar when it is available", async () => {
+  it("uses Python when the document IPython grammar is available", async () => {
     await lumine.packages.activatePackage("language-python");
     await lumine.packages.activatePackage("language-ipython");
     view = mount(makeCell());
-    expect(view.editor.getGrammar().scopeName).toBe("source.python.ipy");
+    expect(view.editor.getGrammar().scopeName).toBe("source.python");
   });
 
   it("renders markdown instead of an editor when it is not being edited", () => {
@@ -221,7 +221,7 @@ describe("cell view", () => {
     it("records a grammar assigned from outside as the cell's language", () => {
       const onLanguageChange = jasmine.createSpy("onLanguageChange");
       view = mount(makeCell(), { onLanguageChange });
-      expect(view.editor.getGrammar().scopeName).toBe("source.python.ipy");
+      expect(view.editor.getGrammar().scopeName).toBe("source.python");
 
       // What the grammar selector does on confirm.
       lumine.grammars.assignGrammar(view.editor, jsonGrammar());
@@ -239,7 +239,7 @@ describe("cell view", () => {
 
       lumine.grammars.assignGrammar(
         view.editor,
-        lumine.grammars.grammarForScopeName("source.python.ipy"),
+        lumine.grammars.grammarForScopeName("source.python"),
       );
 
       expect(onLanguageChange).toHaveBeenCalledWith(null);
@@ -260,7 +260,7 @@ describe("cell view", () => {
       lumine.grammars.autoAssignLanguageMode(view.editor.getBuffer());
 
       expect(onLanguageChange).toHaveBeenCalledWith(null);
-      expect(view.editor.getGrammar().scopeName).toBe("source.python.ipy");
+      expect(view.editor.getGrammar().scopeName).toBe("source.python");
     });
 
     it("keeps the picked grammar across a markdown render flip", () => {
