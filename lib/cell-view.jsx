@@ -409,12 +409,7 @@ class CellView {
         localChangeSourceRevision !== currentSourceRevision &&
         source !== modelSource
       ) {
-        this._updatingFromExternal = true;
-        const position = this.editor.getCursorBufferPosition();
-        this.editor.setText(modelSource);
-        this.editor.setCursorBufferPosition(position);
-        this._lastKnownSource = modelSource;
-        this._editorIsDirty = false;
+        this.applyExternalSource(modelSource);
         return;
       }
       // Only trigger source change if the source actually changed from last known
@@ -674,6 +669,23 @@ class CellView {
     if (this.props.onLanguageChange) this.props.onLanguageChange(languageId);
   }
 
+  applyExternalSource(source) {
+    if (this.editor.getText() !== source) {
+      const wasUpdatingFromExternal = this._updatingFromExternal;
+      this._updatingFromExternal = true;
+      const position = this.editor.getCursorBufferPosition();
+      try {
+        this.editor.getBuffer().setTextViaDiff(source);
+        this.editor.setCursorBufferPosition(position);
+      } finally {
+        this._updatingFromExternal = wasUpdatingFromExternal;
+      }
+    }
+    this._lastKnownSource = source;
+    this._editorIsDirty = false;
+    this._localChangeSourceRevision = null;
+  }
+
   update(props) {
     const oldProps = this.props;
     this.props = { ...this.props, ...props };
@@ -700,14 +712,7 @@ class CellView {
     // the model itself. Compare against what this view last knew rather than
     // against the editor text, which may be mid-edit.
     if (this.editor && props.cell && props.cell.source !== this._lastKnownSource) {
-      // setText triggers onDidStopChanging, so flag it as not a local edit.
-      this._updatingFromExternal = true;
-      const position = this.editor.getCursorBufferPosition();
-      this.editor.setText(props.cell.source);
-      this.editor.setCursorBufferPosition(position);
-      this._lastKnownSource = props.cell.source;
-      this._editorIsDirty = false;
-      this._localChangeSourceRevision = null;
+      this.applyExternalSource(props.cell.source);
     } else if (!this.editor && props.cell) {
       this._lastKnownSource = props.cell.source;
     }

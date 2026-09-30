@@ -185,6 +185,64 @@ describe("cell view", () => {
     expect(view.editor.getText()).toBe("changed elsewhere");
   });
 
+  it("acknowledges a local source echo without changing the buffer again", () => {
+    view = mount(makeCell());
+    view.editor.setText("changed locally");
+    const changes = [];
+    const subscription = view.editor.getBuffer().onDidChange((event) => changes.push(event));
+    try {
+      view.update({ cell: makeCell({ source: "changed locally" }), cellSourceRevision: 1 });
+      flush(view);
+      expect(changes.length).toBe(0);
+      expect(view.editor.getText()).toBe("changed locally");
+      expect(view._editorIsDirty).toBe(false);
+    } finally {
+      subscription.dispose();
+    }
+  });
+
+  it("applies only the changed text from another source editor", () => {
+    view = mount(makeCell({ source: "value = 1\nother = 2\n" }));
+    view.editor.setCursorBufferPosition([1, 5]);
+    const changes = [];
+    const subscription = view.editor
+      .getBuffer()
+      .onDidChange((event) => changes.push(...event.changes));
+    try {
+      view.update({ cell: makeCell({ source: "value = 3\nother = 2\n" }), cellSourceRevision: 1 });
+      flush(view);
+      expect(changes.length).toBe(1);
+      expect(changes[0].oldText).toBe("1");
+      expect(changes[0].newText).toBe("3");
+      expect(view.editor.getCursorBufferPosition().toArray()).toEqual([1, 5]);
+    } finally {
+      subscription.dispose();
+    }
+  });
+
+  it("publishes a local edit made immediately after a remote source update", async () => {
+    jasmine.useRealClock();
+    const onSourceChange = jasmine.createSpy("onSourceChange");
+    view = mount(makeCell({ source: "value = 1\n" }), { onSourceChange });
+    view.update({ cell: makeCell({ source: "value = 2\n" }), cellSourceRevision: 1 });
+    const stopped = new Promise((resolve) => {
+      const subscription = view.editor.onDidStopChanging(() => {
+        subscription.dispose();
+        resolve();
+      });
+    });
+    view.editor.setTextInBufferRange(
+      [
+        [0, 8],
+        [0, 9],
+      ],
+      "3",
+    );
+    await stopped;
+    expect(onSourceChange.calls.count()).toBe(1);
+    expect(onSourceChange).toHaveBeenCalledWith("value = 3\n");
+  });
+
   it("offers run, clear and delete on a code cell, delete alone otherwise", () => {
     view = mount(makeCell());
     expect(view.element.querySelectorAll(".cell-actions button").length).toBe(3);

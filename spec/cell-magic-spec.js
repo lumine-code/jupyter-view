@@ -90,6 +90,39 @@ describe("notebook cell magic syntax", () => {
     expect(mode.tree.rootNode.startPosition.row).toBe(2);
   });
 
+  it("keeps Markdown injections through source echoes and external body edits", async () => {
+    const editor = mount("%%markdown\n# Title\nparagraph text\n");
+    const mode = await settle(editor);
+    const layers = mode.getAllInjectionLayers();
+    expect(layers.length).toBeGreaterThan(0);
+    editor.setTextInBufferRange(
+      [
+        [2, 10],
+        [2, 11],
+      ],
+      "T",
+    );
+    await settle(editor);
+    const parse = spyOn(mode, "parseAsync").and.callThrough();
+
+    view.update({ cell: { ...view.props.cell, source: editor.getText() }, cellSourceRevision: 1 });
+    await settle(editor);
+    expect(parse.calls.count()).toBe(0);
+
+    view.update({
+      cell: { ...view.props.cell, source: "%%markdown\n# Title\nparagraph Test\n" },
+      cellSourceRevision: 2,
+    });
+    await settle(editor);
+    expect(editor.getBuffer().getLanguageMode()).toBe(mode);
+    const current = mode.getAllInjectionLayers();
+    expect(current.length).toBe(layers.length);
+    current.forEach((layer, index) => expect(layer).toBe(layers[index]));
+    expect(parse.calls.count()).toBeGreaterThan(0);
+    parse.calls.allArgs().forEach((args) => expect(args[1]).toBeTruthy());
+    expect(editor.getText()).toBe("%%markdown\n# Title\nparagraph Test\n");
+  });
+
   it("changes body grammar immediately when a header is edited or removed", async () => {
     const editor = mount("%%html\n<b>one</b>\n");
     await settle(editor);
