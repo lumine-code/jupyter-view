@@ -1,7 +1,6 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { FileState } = require("lumine");
 const NotebookDocument = require("../lib/notebook-document");
 const NotebookDocumentRegistry = require("../lib/notebook-document-registry");
 const JupyterNotebookEditor = require("../lib/jupyter-notebook-editor");
@@ -73,13 +72,13 @@ describe("notebook change tracking", () => {
     first.onDidChangeFileState((fileState) => firstStates.push(fileState));
     second.onDidChangeFileState((fileState) => secondStates.push(fileState));
 
-    expect(first.getFileState()).toBe(FileState.UNMODIFIED);
+    expect(first.getFileState()).toBe("unmodified");
     document.updateCellSource(0, "local edit", first);
 
-    expect(first.getFileState()).toBe(FileState.MODIFIED);
-    expect(second.getFileState()).toBe(FileState.MODIFIED);
-    expect(firstStates).toEqual([FileState.MODIFIED]);
-    expect(secondStates).toEqual([FileState.MODIFIED]);
+    expect(first.getFileState()).toBe("modified");
+    expect(second.getFileState()).toBe("modified");
+    expect(firstStates).toEqual(["modified"]);
+    expect(secondStates).toEqual(["modified"]);
     expect(first.shouldPromptToSave()).toBe(false, "another split still owns the document");
 
     second.destroy();
@@ -99,37 +98,31 @@ describe("notebook change tracking", () => {
     // Reformatting the saved revision is not a conflict.
     fs.writeFileSync(filePath, JSON.stringify(notebook));
     await document._handleFileChange();
-    expect(document.getFileState()).toBe(FileState.MODIFIED);
+    expect(document.getFileState()).toBe("modified");
 
     const external = structuredClone(notebook);
     external.cells[0].source = ["external\n"];
     fs.writeFileSync(filePath, JSON.stringify(external));
     await document._handleFileChange();
-    expect(document.getFileState()).toBe(FileState.CONFLICTED);
+    expect(document.getFileState()).toBe("conflicted");
     expect(document.getCell(0).source).toBe("local edit");
 
     fs.writeFileSync(filePath, JSON.stringify(notebook, null, 2));
     await document._handleFileChange();
-    expect(document.getFileState()).toBe(FileState.MODIFIED);
+    expect(document.getFileState()).toBe("modified");
 
     document._watchFile();
     fs.unlinkSync(filePath);
     await document._handleFileChange();
-    expect(document.getFileState()).toBe(FileState.REMOVED);
+    expect(document.getFileState()).toBe("removed");
     document.savedHistoryStateId = document.currentHistoryStateId;
     document.savedRuntimeRevision = document.runtimeRevision;
     document.updateModifiedState();
-    expect(document.getFileState()).toBe(FileState.REMOVED);
+    expect(document.getFileState()).toBe("removed");
 
     expect(await document.save()).toBe(true);
-    expect(document.getFileState()).toBe(FileState.UNMODIFIED);
-    expect(states).toEqual([
-      FileState.MODIFIED,
-      FileState.CONFLICTED,
-      FileState.MODIFIED,
-      FileState.REMOVED,
-      FileState.UNMODIFIED,
-    ]);
+    expect(document.getFileState()).toBe("unmodified");
+    expect(states).toEqual(["modified", "conflicted", "modified", "removed", "unmodified"]);
   });
 
   it("reloads a changed disk revision when the document is clean", async () => {
@@ -141,7 +134,7 @@ describe("notebook change tracking", () => {
     await document._handleFileChange();
 
     expect(document.getCell(0).source).toBe("external\n");
-    expect(document.getFileState()).toBe(FileState.UNMODIFIED);
+    expect(document.getFileState()).toBe("unmodified");
   });
 
   it("turns an async reload into a conflict when an edit wins the race", async () => {
@@ -163,7 +156,7 @@ describe("notebook change tracking", () => {
     await reload;
 
     expect(document.getCell(0).source).toBe("local edit");
-    expect(document.getFileState()).toBe(FileState.CONFLICTED);
+    expect(document.getFileState()).toBe("conflicted");
   });
 
   it("serializes and revalidates a restored non-unmodified state", async () => {
@@ -175,7 +168,7 @@ describe("notebook change tracking", () => {
     await document._handleFileChange();
     const state = document.serializeState();
 
-    expect(state.fileState).toBe(FileState.CONFLICTED);
+    expect(state.fileState).toBe("conflicted");
     expect(state.notebookData.cells[0].source).toEqual(["local edit"]);
     expect(state.savedDiskFingerprint).not.toBeNull();
 
@@ -184,18 +177,18 @@ describe("notebook change tracking", () => {
     await restored.initializeFromData(state.notebookData);
     restored.restoreState(state);
     await restored.reconcileRestoredFileState();
-    expect(restored.getFileState()).toBe(FileState.CONFLICTED);
+    expect(restored.getFileState()).toBe("conflicted");
     expect(restored.getCell(0).source).toBe("local edit");
 
     fs.writeFileSync(filePath, JSON.stringify(notebook));
     await restored.reconcileRestoredFileState();
-    expect(restored.getFileState()).toBe(FileState.MODIFIED);
+    expect(restored.getFileState()).toBe("modified");
 
     // The restored path is what must be absent. Renaming avoids Windows' delete-pending
     // state, where unlink can succeed while a scanner still holds the old file open.
     fs.renameSync(filePath, path.join(path.dirname(filePath), "removed.ipynb"));
     await restored.reconcileRestoredFileState();
-    expect(restored.getFileState()).toBe(FileState.REMOVED);
+    expect(restored.getFileState()).toBe("removed");
   });
 
   it("classifies history, runtime and transient changes without hashing outputs", async () => {

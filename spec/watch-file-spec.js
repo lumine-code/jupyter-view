@@ -2,7 +2,6 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const NotebookDocument = require("../lib/notebook-document");
-const { FileState } = require("lumine");
 
 describe("notebook file observation", () => {
   let directory, filePath, document;
@@ -40,10 +39,10 @@ describe("notebook file observation", () => {
   });
   it("keeps its original path after an external rename and sees recreation", async () => {
     fs.renameSync(filePath, path.join(directory, "external.ipynb"));
-    await globalThis.conditionPromise(() => document.getFileState() === FileState.REMOVED);
+    await globalThis.conditionPromise(() => document.getFileState() === "removed");
     expect(document.getPath()).toBe(filePath);
     fs.copyFileSync(path.join(directory, "external.ipynb"), filePath);
-    await globalThis.conditionPromise(() => document.getFileState() === FileState.UNMODIFIED);
+    await globalThis.conditionPromise(() => document.getFileState() === "unmodified");
   });
   it("reconciles an external write that arrives while save notifications are deferred", async () => {
     await document.save();
@@ -51,7 +50,7 @@ describe("notebook file observation", () => {
     contents.cells[0].source = ["external after save"];
     fs.writeFileSync(filePath, JSON.stringify(contents));
     await globalThis.conditionPromise(() => document.getCell(0).source === "external after save");
-    expect(document.getFileState()).toBe(FileState.UNMODIFIED);
+    expect(document.getFileState()).toBe("unmodified");
   });
 
   it("retargets an editor move without replacing unsaved cells or their history", async () => {
@@ -68,6 +67,6 @@ describe("notebook file observation", () => {
     expect(document.getCell(0)).toBe(cell);
     expect(cell.source).toBe("local edit");
     expect(document.currentHistoryStateId).toBe(history);
-    expect(document.getFileState()).toBe(FileState.MODIFIED);
+    expect(document.getFileState()).toBe("modified");
   });
 });

@@ -1,7 +1,6 @@
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { FileState } = require("lumine");
 const NotebookDocument = require("../lib/notebook-document");
 const JupyterNotebookEditor = require("../lib/jupyter-notebook-editor");
 
@@ -73,15 +72,15 @@ describe("notebook file format identity", () => {
     expect(sourceEditor.setLineEnding("\r\n")).toBe(true);
     expect(Array.from(sourceEditor.getLineEndings())).toEqual(["\r\n"]);
     expect(sourceEditor.getText()).toContain("\r\n");
-    expect(document_.getFileState()).toBe(FileState.MODIFIED);
+    expect(document_.getFileState()).toBe("modified");
 
     editor.undoCellOperation();
     expect(Array.from(sourceEditor.getLineEndings())).toEqual(["\n"]);
-    expect(document_.getFileState()).toBe(FileState.UNMODIFIED);
+    expect(document_.getFileState()).toBe("unmodified");
 
     editor.redoCellOperation();
     expect(Array.from(sourceEditor.getLineEndings())).toEqual(["\r\n"]);
-    expect(document_.getFileState()).toBe(FileState.MODIFIED);
+    expect(document_.getFileState()).toBe("modified");
     expect(changes).toEqual([["\r\n"], ["\n"], ["\r\n"]]);
 
     expect(await editor.save()).toBe(true);
@@ -104,7 +103,7 @@ describe("notebook file format identity", () => {
     expect(bytes).toContain("\r\n");
     expect(bytes.replace(/\r\n/g, "")).not.toContain("\n");
     expect(Array.from(sourceEditor.getLineEndings())).toEqual(["\r\n"]);
-    expect(document_.getFileState()).toBe(FileState.UNMODIFIED);
+    expect(document_.getFileState()).toBe("unmodified");
   });
 
   it("redetects line endings after an external reload", async () => {
@@ -114,7 +113,7 @@ describe("notebook file format identity", () => {
     await document_._handleFileChange();
 
     expect(Array.from(sourceEditor.getLineEndings())).toEqual(["\r\n"]);
-    expect(document_.getFileState()).toBe(FileState.UNMODIFIED);
+    expect(document_.getFileState()).toBe("unmodified");
   });
 
   it("uses the selected ending and UTF-8 when an untitled notebook is saved as", async () => {
