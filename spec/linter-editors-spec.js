@@ -152,4 +152,45 @@ describe("lib/linter-editors", () => {
     expect(registrations).toEqual([]);
     editor.destroy();
   });
+
+  it("moves registrations to a replacement and ignores the older detach", () => {
+    const editor = buildEditor();
+    const added = addLinterEditor(editor);
+    const first = consumeLinterEditors(register);
+    serviceDisposable = consumeLinterEditors(register);
+    expect(registrations.length).toBe(2);
+    expect(registrations[0].disposed).toBe(true);
+    first.dispose();
+    expect(registrations[1].disposed).toBe(false);
+    added.dispose();
+    editor.destroy();
+  });
+
+  it("keeps a new registry when an older owner disposes after replacement", () => {
+    const previous = ownership;
+    ownership = createLinterEditors();
+    const editor = buildEditor();
+    const added = addLinterEditor(editor);
+    serviceDisposable = consumeLinterEditors(register);
+    previous.dispose();
+    expect(registrations[0].disposed).toBe(false);
+    added.dispose();
+    editor.destroy();
+  });
+
+  it("ignores an old provider lease after its registry is destroyed and reused", () => {
+    const { LinterEditors } = require("../lib/linter-editors");
+    const registry = new LinterEditors();
+    const editor = buildEditor();
+    registry.add(editor);
+    const first = registry.consume(register);
+    registry.destroy();
+    registry.add(editor);
+    const replacement = registry.consume(register);
+    first.dispose();
+    expect(registrations[1].disposed).toBe(false);
+    replacement.dispose();
+    registry.destroy();
+    editor.destroy();
+  });
 });
