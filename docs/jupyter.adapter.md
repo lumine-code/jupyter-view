@@ -61,6 +61,9 @@ type JupyterAdapter = {
   getKernelGrammar(kernelSpec?: object): Grammar;
   getKernelTarget(targetId?: string): Target;
   setKernelSpec(kernelSpec: object, languageInfo?: object): boolean;
+
+  // Optional runtime navigation: return a guarded link to a captured execution.
+  resolveSourceFrame?(frame: object, kernel: object): { open(): Promise<unknown> } | null;
 };
 
 type Target = {
@@ -111,6 +114,8 @@ Adapters are per pane item, so a window with three notebooks has three of them.
 `getKernelOwner()` is different: every split of one notebook returns the same document. Kernel bindings and lifecycle subscriptions belong to that owner, whose `id`, `getPath()`, `onDidChangePath()`, `onDidDestroy()`, and `isDestroyed()` remain stable until the last split closes.
 
 `getAdapterId()` is document-stable too: every split reports `jupyter-view:<document-id>` rather than inventing a pane-specific identity.
+
+`resolveSourceFrame(frame, kernel)` is optional. A frame supplies a one-based `line`, a compiler `filename`, and, for a cached IPython cell, an `executionCount`. The adapter resolves only source captured from that kernel's current connection generation and rechecks the cell before its link opens. Missing history, a changed or deleted cell, and restored execution counts without runtime provenance return `null`.
 
 ## Teardown
 
