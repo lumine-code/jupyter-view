@@ -12,6 +12,7 @@
 
 const etch = require("@lumine-code/etch");
 const outputRenderer = require("./output-renderer");
+const { optionsForOutput } = require("./traceback-navigation");
 
 function asText(value) {
   if (Array.isArray(value)) return value.join("");
@@ -52,12 +53,15 @@ function renderFallbackOutput(output) {
   return null;
 }
 
-function renderOutput(output) {
+function renderOutput(output, editor) {
   const service = outputRenderer.get();
   if (!service) {
     return renderFallbackOutput(output);
   }
-  return service.renderDisplay(service.normalizeOutput(output));
+  return service.renderDisplay(
+    service.normalizeOutput(output),
+    editor ? optionsForOutput(editor, output) : {},
+  );
 }
 
 class OutputView {
@@ -89,7 +93,7 @@ class OutputView {
               className={`jupyter-output output-${output.output_type || "unknown"}`}
               attributes={{ "data-output-index": String(index) }}
             >
-              {renderOutput(output)}
+              {renderOutput(output, this.props.editor)}
             </div>
           ))}
         </div>

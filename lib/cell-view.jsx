@@ -272,6 +272,7 @@ class CellView {
               <OutputView
                 ref="outputView"
                 outputs={outputs}
+                editor={this.props.editor}
                 maxHeight={lumine.config.get("jupyter-view.output.maxHeight")}
               />
             </div>

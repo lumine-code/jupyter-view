@@ -11,6 +11,7 @@ Open and edit Jupyter notebooks.
 - **Cell grammars**: uses original language packages, selects body syntax for cell magics, and preserves manual grammar choices in the metadata VS Code reads.
 - **File identity**: the notebook source is always UTF-8, preserves LF or CRLF on save, and exposes cell grammar only while a cell is in edit mode.
 - **Execution integration**: run cells through the jupyter-repl kernel engine via the `jupyter.adapter` service, with per-cell run buttons and live execution status.
+- **Traceback navigation**: follow Python error frames to the cell that produced the execution, with stable cell identity after reordering, source-change guards, and SyntaxError column ranges through jupyter-repl's renderer.
 - **Language servers**: feeds open notebooks to the language servers ide-client runs, so completions, hover, diagnostics, and navigation work inside cells with cross-cell context.
 - **Notebook search**: search and replace cell source through the search-panel package, entering edit mode on the matching cell.
 - **Open source**: open any `.ipynb` as plain JSON text from an active notebook or the tree-view.
