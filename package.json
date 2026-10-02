@@ -123,8 +123,7 @@
   },
   "dependencies": {
     "@lumine-code/etch": "github:lumine-code/etch#27015c2cc9cfe68f8f036923badaaee86ffd08e9",
-    "anser": "^2.3.5",
-    "uuid": "^14.0.2"
+    "anser": "^2.3.5"
   },
   "configSchema": {
     "lsp": {
