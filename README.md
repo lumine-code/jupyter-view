@@ -4,19 +4,15 @@ Open and edit Jupyter notebooks.
 
 ## Features
 
-- **Notebook editing**: open and edit `.ipynb` files with a cell-based interface, command/edit modes, and keyboard-driven navigation.
-- **Cell operations**: insert, delete, move, merge, cut, copy, paste, duplicate, change type, and reorder cells by drag and drop.
-- **Rich output**: render stored notebook outputs — text, images, SVG, HTML, LaTeX, markdown, plotly and vega, with ANSI color — through jupyter-repl's renderers.
-- **Multi-select and history**: anchor-based multi-cell selection and buffer-based undo/redo of notebook edits.
+- **Notebook editing**: open and edit `.ipynb` files with command/edit modes and keyboard-driven navigation; preserve UTF-8 source and LF or CRLF on save.
+- **Cell operations**: insert, delete, move, merge, cut, copy, paste, duplicate, change type, and reorder cells by drag and drop, with multi-cell selection and buffer-based undo/redo.
+- **Rich output**: render text, images, SVG, HTML, LaTeX, markdown, Plotly and Vega with ANSI color; follow Python traceback frames to their source with stable cell identity and source-change guards.
 - **Cell grammars**: uses original language packages, selects body syntax for cell magics, and preserves manual grammar choices in the metadata VS Code reads.
-- **File identity**: the notebook source is always UTF-8, preserves LF or CRLF on save, and exposes cell grammar only while a cell is in edit mode.
 - **Execution integration**: run cells through the jupyter-repl kernel engine via the `jupyter.adapter` service, with per-cell run buttons and live execution status.
-- **Traceback navigation**: follow Python error frames to the cell that produced the execution, with stable cell identity after reordering, source-change guards, and SyntaxError column ranges through jupyter-repl's renderer.
 - **Language servers**: feeds open notebooks to the language servers ide-client runs, so completions, hover, diagnostics, and navigation work inside cells with cross-cell context.
-- **Notebook search**: search and replace cell source through the search-panel package, entering edit mode on the matching cell.
-- **Open source**: open any `.ipynb` as plain JSON text from an active notebook or the tree-view.
-- **Editor integrations**: expose cells to linter, navigation, and scrollmap adapters so headings, selection, and diagnostics appear on the scrollbar.
-- **Export**: save notebooks as Python scripts or HTML.
+- **Editor integrations**: search and replace cell source, expose linter diagnostics and navigation headings, and show selection and diagnostics on the scrollbar.
+- **Source and export**: open notebooks as plain JSON from the notebook or tree view, and export Python scripts or HTML.
+- **MCP automation**: let connected assistants read, create, open, edit and save live notebooks, with bounded output reads, revision guards, retry-safe edits and cancellable change waits.
 
 ## Installation
 
@@ -84,6 +80,7 @@ Commands available in `.tree-view`:
 
 ## Services
 
+- `mcp.tools`: provided to expose live notebook reads, cell operations, save/open/create and bounded change waits to connected MCP clients.
 - [`jupyter.adapter`](docs/jupyter.adapter.md): provided to let [jupyter-repl](https://github.com/lumine-code/jupyter-repl) execute notebook cells with its normal run commands, routing kernel output, execution counts, focus, and navigation back into the notebook.
 - [`jupyter.notebook`](docs/jupyter.notebook.md): provided to expose notebook documents, their editors, and the active notebook item to packages that need notebook-aware behavior.
 - `search.adapter`: provided to let the search-panel package find and replace cell source in the active notebook.

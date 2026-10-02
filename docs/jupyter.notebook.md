@@ -34,6 +34,48 @@ type JupyterNotebook = {
   getActiveNotebook(): NotebookEditor | null;
   getDocumentRegistry(): DocumentRegistry;
   getNotebookEditors(document: NotebookDocument): NotebookEditor[];
+  listNotebooks(options?: { offset?: number; limit?: number }): NotebookList;
+  getNotebookSnapshot(options: {
+    notebookId: string;
+    offset?: number;
+    limit?: number;
+    sourceLimit?: number;
+  }): Promise<NotebookSnapshot>;
+  getCellSnapshot(options: {
+    notebookId: string;
+    cellId: string;
+    sourceOffset?: number;
+    sourceLimit?: number;
+    outputOffset?: number;
+    outputLimit?: number;
+    includeOutputs?: boolean;
+  }): Promise<CellSnapshot>;
+  getNotebookRevision(notebookId: string): string;
+  getExecutionSnapshot(options: {
+    notebookId: string;
+    cellIds?: string[];
+    codeOnly?: boolean;
+    maxCells?: number;
+    maxSourceChars?: number;
+  }): Promise<ExecutionSnapshot>;
+  getExecutionAdapter(notebookId: string): NotebookAdapter;
+  editCell(request: EditCellRequest): Promise<MutationResult>;
+  saveNotebook(request: SaveNotebookRequest): Promise<MutationResult>;
+  openNotebook(request: {
+    path: string;
+    expectedGeneration: string;
+    operationId: string;
+  }): Promise<NotebookSnapshot>;
+  createNotebook(request: {
+    expectedGeneration: string;
+    operationId: string;
+    language?: string;
+  }): Promise<NotebookSnapshot>;
+  onDidChangeNotebook(callback: (event: NotebookChange) => void): Disposable;
+  waitForNotebookChange(
+    request: { notebookId: string; afterRevision: string; timeoutMs?: number },
+    context?: { signal?: AbortSignal },
+  ): Promise<NotebookChange & { changed: boolean }>;
 };
 ```
 
@@ -61,6 +103,24 @@ Cell types and boundaries come from the notebook document. Code cells use origin
 
 Line magics, shell escapes and help syntax remain valid inputs to the IPython kernel but may produce Python parser errors in notebook cells. Full IPython document syntax belongs to `.ipy` files handled by `language-ipython`.
 
+### Addressed automation
+
+Automation targets `notebookId`, the live document's `id`, rather than the active notebook or its filename. `listNotebooks()` returns paginated summaries, including unsaved notebooks, their paths and URIs, language, file state and cell count. It also returns the provider `generation` token used by `createNotebook` and `openNotebook`. Closed or unloaded document generations reject requests. Opening a file requires an explicit absolute `.ipynb` path, `expectedGeneration` and `operationId`, and reuses an existing document.
+
+Every summary has two opaque tokens. `revision` changes with notebook source, type, structure, metadata, reload or undo; runtime output and execution status do not invalidate it. `changeRevision` also changes with output/status, save and path events. Both include an instance UUID, so a token from before provider unload or file reopening cannot match a fresh generation. Source reads and revision checks flush pending source from every split view and the source controller first.
+
+`getNotebookSnapshot` returns `{notebookId, revision, changeRevision, path, uri, language, fileState, modified, cellCount, offset, cells, truncated}`. Each cell has `{cellId, index, type, sourceRevision, source, executionCount, status, outputCount}`. `source` is `{text, offset, totalChars, truncated}`. Listing defaults to 50 cells, at most 100, with at most 1,000 source characters per cell. `getCellSnapshot` provides source pagination up to 65,536 characters and output pagination up to 25 entries; default limits are 16,000 characters and 10 outputs. Text, error and traceback previews are bounded to 2,000 characters per representation; binary outputs expose MIME type and size without base64. Reads never execute notebook code.
+
+Execution consumers use `getExecutionSnapshot` rather than truncated read previews. It returns complete `{cellId, index, type, source: string, sourceRevision}` entries and the current notebook `revision`, or rejects if the requested bounds are exceeded. Optional `cellIds` selects stable IDs and `codeOnly: true` excludes Markdown and raw cells; selection happens before budgeting and preserves document order. Maximum bounds are 1,000 selected cells and 1,048,576 selected source characters. A single-cell run requests its own `cellIds`, while a full notebook run requests `codeOnly: true`, so unrelated or large Markdown content cannot block code execution. `getExecutionAdapter(notebookId)` returns the normal live notebook adapter, with ID `jupyter-view:<notebookId>`, without consulting the active pane. Before accepting a run, compare `getNotebookRevision(notebookId)` with the captured source revision; the execution package owns kernel selection and running code.
+
+`editCell` requires `{notebookId, operationId, expectedRevision, operation}`. Operations are `insert`, `replace`, `move` and `delete`. Insert accepts optional `source` and `type`; replace requires a stable `cellId` and `source` or `type`; move and delete require `cellId`. Insert/move accept one `beforeCellId` or `afterCellId`, defaulting to the end. Types are `code`, `markdown` and `raw`. Source is limited to 1,000,000 characters. Deleting the final cell clears it and reports `cleared: true`, preserving the editor's one-cell invariant. Edits commit through the existing document/source controller, preserving undo, split-view updates, language-server synchronization and search adapters.
+
+`saveNotebook` requires `{notebookId, operationId}` and accepts `expectedRevision`, `path` and `overwrite`. Unsaved notebooks require an absolute `.ipynb` path. An existing different destination or unresolved external file conflict requires explicit boolean `overwrite: true`; strings and other types are refused before filesystem work. All notebook tools reject unexpected arguments at runtime as well as declaring their schemas. Saves use the document's normal atomic save queue, preserving edits that arrive while writing. Failed Save As restores the previous file binding only while the attempted path and File identity still belong to that operation; concurrent human path and source changes win. No dialog chooses a path on behalf of automation.
+
+Cell edits and saves retain up to 128 operation receipts per document; create/open share 128 receipts per provider. Receipts, including failures, remain for the entire generation. At capacity, new operations are refused while existing retries remain available. Retrying identical arguments returns the original result with `replayed: true`, or the original failure; reusing an ID with different arguments rejects. Concurrent retries share one operation. A fresh edit still requires the current source token after pending human edits have been flushed. Create/open require the provider generation from `listNotebooks`, preventing retry keys from creating duplicates after a provider reload. Retrying creation/open after its notebook closes rejects rather than opening another one.
+
+`onDidChangeNotebook` publishes `{notebookId, revision, changeRevision, kind, cellIds}`, with `closed: true` when the document closes. `waitForNotebookChange` takes `afterRevision` from a read's **changeRevision**, not its source revision. It resolves immediately if a change has already occurred, otherwise waits for a live event or returns `changed: false` on timeout. The default wait is 20 seconds, maximum 25 seconds; at most eight waits may be pending per provider. An optional request-context `AbortSignal`, provider unload or client cancellation removes the timer and listener; a closed notebook reports a close event. Return and dispose subscriptions when a consumer unloads.
+
 ## Minimal example
 
 ```js
@@ -84,7 +144,7 @@ module.exports = {
 
 `getActiveNotebook()` returns `null` whenever the active pane item is anything else, which is most of the time. It is a query, not a subscription.
 
-The document registry is the way to reach a notebook that is open but not focused. Treat what it holds as read-mostly: mutating a document behind the view's back leaves the two out of step.
+The document registry is the way to reach a notebook that is open but not focused. Use the addressed edit/save methods for automation, rather than mutating a document behind the source controller.
 
 Receiving this service means `jupyter-view` is installed, which is itself the useful signal for a package deciding whether to offer notebook-specific behavior at all.
 

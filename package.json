@@ -48,6 +48,11 @@
     "JupyterNotebookEditor": "deserializeNotebookEditor"
   },
   "providedServices": {
+    "mcp.tools": {
+      "versions": {
+        "1.0.0": "provideMcpTools"
+      }
+    },
     "jupyter.notebook": {
       "versions": {
         "1.0.0": "provideJupyterNotebook"
