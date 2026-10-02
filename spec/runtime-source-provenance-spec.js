@@ -156,9 +156,13 @@ describe("executed notebook definition provenance", () => {
   });
 
   it("invalidates restart provenance without needing a new execution count", () => {
-    events.emit("state", "restarting");
-    events.emit("state", "idle");
-    expect(navigation.resolveSourceFrame(editor, kernel, frame())).toBeNull();
+    for (const state of ["restarting", "autorestarting"]) {
+      capture();
+      expect(navigation.resolveSourceFrame(editor, kernel, frame())).toBeTruthy();
+      events.emit("state", state);
+      events.emit("state", "idle");
+      expect(navigation.resolveSourceFrame(editor, kernel, frame())).toBeNull();
+    }
   });
 
   it("releases its generation observer when its document closes", () => {
