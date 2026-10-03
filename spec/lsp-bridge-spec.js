@@ -243,8 +243,8 @@ describe("the language-server bridge", () => {
     await flushFrame();
     expect(lints.length).toBe(baseline);
 
-    // The set changing — a server accepted the notebook — re-asks the CLI
-    // route, which is when linter-ruff's stand-down answer flips.
+    // A server accepting the notebook changes the available analysis and asks
+    // document linter providers for another pass.
     client.adapters = [{ id: "ide-ruff" }];
     document.emitter.emit("did-change", { affectsSource: true });
     await flushFrame();
