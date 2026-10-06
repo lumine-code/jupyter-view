@@ -153,7 +153,7 @@
 
     .mode-indicator {
       padding: 2px 8px;
-      border-radius: var(--component-border-radius);
+      border-radius: var(--ui-border-radius);
       font-weight: bold;
       text-transform: uppercase;
     }
@@ -163,7 +163,7 @@
   .jupyter-notebook-cells {
     flex: 1;
     overflow-y: auto;
-    padding: calc(var(--component-padding) / 2);
+    padding: calc(var(--ui-spacing) / 2);
   }
 
   /* Mode-specific styles */
@@ -202,7 +202,7 @@
     border: 1px solid var(--app-background-color);
     border-left-width: 4px;
     border-left-color: var(--app-background-color);
-    border-radius: var(--component-border-radius);
+    border-radius: var(--ui-border-radius);
     background-color: var(--syntax-background-color);
     /* UI themes use the generic `.selected` class for list text. A notebook
        cell uses it only for its border, so keep its content color stable. */
@@ -241,8 +241,8 @@
 
     /* Multiple selection - selected but not active */
     &.selected:not(.active) {
-      border-color: rgb(from var(--accent-color) r g b / 0.5);
-      border-left-color: rgb(from var(--accent-color) r g b / 0.5);
+      border-color: rgb(from var(--accent-indicator-color) r g b / 0.5);
+      border-left-color: rgb(from var(--accent-indicator-color) r g b / 0.5);
     }
 
     /* Drag and drop states */
@@ -252,11 +252,11 @@
     }
 
     &.drop-above {
-      box-shadow: 0 -3px 0 0 var(--accent-color);
+      box-shadow: 0 -3px 0 0 var(--accent-indicator-color);
     }
 
     &.drop-below {
-      box-shadow: 0 3px 0 0 var(--accent-color);
+      box-shadow: 0 3px 0 0 var(--accent-indicator-color);
     }
   }
 
@@ -291,13 +291,13 @@
     }
 
     .cell-number {
-      font-family: var(--font-family);
+      font-family: var(--ui-font-family);
       color: rgb(from var(--text-color) r g b / 0.25);
       font-size: 0.75em;
     }
 
     .execution-count {
-      font-family: var(--font-family);
+      font-family: var(--ui-font-family);
       color: rgb(from var(--text-color) r g b / 0.25);
       font-size: 0.75em;
     }
@@ -309,7 +309,7 @@
 
     .cell-timer {
       font-size: 0.75em;
-      font-family: var(--font-family);
+      font-family: var(--ui-font-family);
       color: rgb(from var(--text-color) r g b / 0.25);
       text-align: right;
       white-space: nowrap;
@@ -358,7 +358,7 @@
         min-height: 1.5em;
 
         &.is-focused {
-          border-color: var(--accent-color);
+          border-color: var(--accent-indicator-color);
         }
       }
 
@@ -421,7 +421,7 @@
       background-color: rgb(from var(--text-color) r g b / 0.1);
       padding: 2px 4px;
       border-radius: 3px;
-      font-family: var(--font-family);
+      font-family: var(--ui-font-family);
     }
 
     pre {
@@ -446,8 +446,8 @@
 
   /* Output rendering */
   .jupyter-outputs {
-    font-family: var(--editor-font-family), var(--font-family);
-    font-size: var(--editor-font-size, var(--font-size));
+    font-family: var(--editor-font-family), var(--ui-font-family);
+    font-size: var(--editor-font-size, var(--ui-font-size));
     line-height: 1.4;
 
     /* Add margin between multiple outputs */
@@ -569,7 +569,7 @@
       overflow-x: auto;
 
       code {
-        font-family: var(--font-family);
+        font-family: var(--ui-font-family);
       }
     }
 
@@ -734,7 +734,7 @@
       width: 32px;
       height: 32px;
       border: 3px solid var(--base-border-color);
-      border-top-color: var(--accent-color);
+      border-top-color: var(--accent-indicator-color);
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
@@ -743,7 +743,7 @@
       color: var(--text-color-error);
       padding: 16px;
       background-color: rgb(from var(--background-color-error) r g b / 0.1);
-      border-radius: var(--component-border-radius);
+      border-radius: var(--ui-border-radius);
       max-width: 400px;
       text-align: center;
     }
