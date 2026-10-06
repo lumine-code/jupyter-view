@@ -88,7 +88,7 @@ describe("package restoration lifecycle", () => {
       main.initialize(packageState);
 
       const opened = [];
-      serviceDisposable = main.consumeIdeClient({
+      serviceDisposable = main.consumeIde({
         adaptersForNotebook: () => [],
         openNotebookDocument(descriptor) {
           const bridge = {

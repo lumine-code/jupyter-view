@@ -9,7 +9,7 @@ Open and edit Jupyter notebooks.
 - **Rich output**: render text, images, SVG, HTML, LaTeX, markdown, Plotly and Vega with ANSI color; follow Python traceback frames to their source with stable cell identity and source-change guards.
 - **Cell grammars**: uses original language packages, selects body syntax for cell magics, and preserves manual grammar choices in the metadata VS Code reads.
 - **Execution integration**: run cells through the jupyter-repl kernel engine via the `jupyter.adapter` service, with per-cell run buttons and live execution status.
-- **Language servers**: feeds open notebooks to the language servers ide-client runs, so completions, hover, diagnostics, and navigation work inside cells with cross-cell context.
+- **Language servers**: feeds open notebooks to the language servers ide runs, so completions, hover, diagnostics, and navigation work inside cells with cross-cell context.
 - **Editor integrations**: search and replace cell source, expose linter diagnostics and navigation headings, and show selection and diagnostics on the scrollbar.
 - **Source and export**: open notebooks as plain JSON from the notebook or tree view, and export Python scripts or HTML.
 - **MCP automation**: let connected assistants read, create, open, edit and save live notebooks, with bounded output reads, revision guards, retry-safe edits and cancellable change waits.
@@ -87,7 +87,7 @@ Commands available in `.tree-view`:
 - `linter.adapter`: provided to map linter diagnostics from the backing editor onto the visible notebook cells.
 - `linter.ui`: provided to receive linter message updates so notebook scrollmap markers stay in sync with diagnostics.
 - `navigation.adapter`: provided to show notebook markdown headings as a document outline, activating and revealing the cell on selection.
-- `ide-client`: consumed to open notebooks on the language-server hub — each code cell becomes its own document for servers that understand notebooks, such as Basedpyright and Ruff.
+- `ide`: consumed to open notebooks on the language-server hub — each code cell becomes its own document for servers that understand notebooks, such as Basedpyright and Ruff.
 - `autocomplete.watch-editor`: consumed to keep autocomplete active in notebook cell editors.
 - `linter.editors`: consumed to register the backing source editor for linting, since only pane items are linted on their own, and each cell editor render-only so projected diagnostics draw inside the cells.
 - `jupyter.output`: consumed to render stored outputs with jupyter-repl's renderers; without it a notebook falls back to text and images.

@@ -2,7 +2,7 @@ const { Emitter } = require("lumine");
 const { LspBridgeManager } = require("../lib/lsp-bridge");
 const main = require("../lib/main");
 
-// The language-server bridge against fakes: a fake ide-client records the
+// The language-server bridge against fakes: a fake ide records the
 // hub-bridge calls, fake documents speak the document-model event vocabulary.
 // The contract under test is event names and payload shapes.
 
@@ -21,7 +21,7 @@ function fakeDocument({ filePath = null, cells = [] } = {}) {
   };
 }
 
-function fakeClient() {
+function fakeIde() {
   const opened = [];
   return {
     opened,
@@ -86,20 +86,20 @@ describe("the language-server bridge", () => {
   it("opens pre-existing and later documents, and skips untitled ones", () => {
     const untitled = fakeDocument({ filePath: null });
     const host = fakeHost([fakeDocument({ filePath: "C:\\proj\\a.ipynb" }), untitled]);
-    const client = fakeClient();
-    manager = new LspBridgeManager(client, host);
+    const ide = fakeIde();
+    manager = new LspBridgeManager(ide, host);
 
     // The untitled document produced no hub call.
-    expect(client.opened.length).toBe(1);
-    expect(client.opened[0].descriptor.filePath).toBe("C:\\proj\\a.ipynb");
+    expect(ide.opened.length).toBe(1);
+    expect(ide.opened[0].descriptor.filePath).toBe("C:\\proj\\a.ipynb");
 
     host.registry.add(fakeDocument({ filePath: "C:\\proj\\b.ipynb" }));
-    expect(client.opened.length).toBe(2);
+    expect(ide.opened.length).toBe(2);
 
     // The untitled notebook attaches once its first save names it.
     untitled.filePath = "C:\\proj\\c.ipynb";
     untitled.emitter.emit("did-change-path", untitled.filePath);
-    expect(client.opened.length).toBe(3);
+    expect(ide.opened.length).toBe(3);
   });
 
   it("translates document events into hub-bridge calls", async () => {
@@ -110,9 +110,9 @@ describe("the language-server bridge", () => {
     ];
     const document = fakeDocument({ filePath: "C:\\proj\\nb.ipynb", cells });
     const host = fakeHost([document]);
-    const client = fakeClient();
-    manager = new LspBridgeManager(client, host);
-    const bridge = client.opened[0];
+    const ide = fakeIde();
+    manager = new LspBridgeManager(ide, host);
+    const bridge = ide.opened[0];
 
     // The descriptor carries the full list: code as code, markdown and raw as
     // markup, model text standing in while no editor exists.
@@ -139,11 +139,11 @@ describe("the language-server bridge", () => {
     document.filePath = "C:\\proj\\renamed.ipynb";
     document.emitter.emit("did-change-path", document.filePath);
     expect(bridge.disposed).toBe(true);
-    expect(client.opened.length).toBe(2);
-    expect(client.opened[1].descriptor.filePath).toBe("C:\\proj\\renamed.ipynb");
+    expect(ide.opened.length).toBe(2);
+    expect(ide.opened[1].descriptor.filePath).toBe("C:\\proj\\renamed.ipynb");
 
     document.emitter.emit("did-destroy");
-    expect(client.opened[1].disposed).toBe(true);
+    expect(ide.opened[1].disposed).toBe(true);
   });
 
   it("returns notebook revelation for server-initiated shows", () => {
@@ -165,10 +165,10 @@ describe("the language-server bridge", () => {
         },
       },
     ];
-    const client = fakeClient();
-    manager = new LspBridgeManager(client, host);
+    const ide = fakeIde();
+    manager = new LspBridgeManager(ide, host);
 
-    const result = client.opened[0].descriptor.show({
+    const result = ide.opened[0].descriptor.show({
       cellId: "c1",
       range: [
         [2, 4],
@@ -184,9 +184,9 @@ describe("the language-server bridge", () => {
     // bridge opens against an empty cell list and must hear the load.
     const document = fakeDocument({ filePath: "C:\\proj\\nb.ipynb", cells: [] });
     const host = fakeHost([document]);
-    const client = fakeClient();
-    manager = new LspBridgeManager(client, host);
-    const bridge = client.opened[0];
+    const ide = fakeIde();
+    manager = new LspBridgeManager(ide, host);
+    const bridge = ide.opened[0];
     expect(bridge.descriptor.cells).toEqual([]);
 
     document.cells = [{ id: "c1", type: "code", source: "import os\n" }];
@@ -212,26 +212,26 @@ describe("the language-server bridge", () => {
         onDidChangeCellEditors: () => ({ dispose() {} }),
       },
     ];
-    const client = fakeClient();
-    manager = new LspBridgeManager(client, host);
-    expect(client.opened[0].descriptor.cells[0].scopeName ?? null).toBeNull();
+    const ide = fakeIde();
+    manager = new LspBridgeManager(ide, host);
+    expect(ide.opened[0].descriptor.cells[0].scopeName ?? null).toBeNull();
 
     scopeName = "source.python.ipy";
     grammarEmitter.emit("did-change-grammar");
     await flushFrame();
-    expect(client.opened[0].updates.length).toBe(1);
-    expect(client.opened[0].updates[0][0].scopeName).toBe("source.python.ipy");
+    expect(ide.opened[0].updates.length).toBe(1);
+    expect(ide.opened[0].updates[0][0].scopeName).toBe("source.python.ipy");
   });
 
   it("nudges the CLI linters only when the attach settles on a changed adapter set", async () => {
     const document = fakeDocument({ filePath: "C:\\proj\\nb.ipynb", cells: [] });
     const host = fakeHost([document]);
-    const client = fakeClient();
+    const ide = fakeIde();
     const lints = [];
     spyOn(lumine.commands, "dispatch").and.callFake((target, name) => {
       if (name === "linter:lint") lints.push(name);
     });
-    manager = new LspBridgeManager(client, host);
+    manager = new LspBridgeManager(ide, host);
     await flushFrame();
     await flushFrame();
     const baseline = lints.length;
@@ -245,7 +245,7 @@ describe("the language-server bridge", () => {
 
     // A server accepting the notebook changes the available analysis and asks
     // document linter providers for another pass.
-    client.adapters = [{ id: "ide-ruff" }];
+    ide.adapters = [{ id: "ide-ruff" }];
     document.emitter.emit("did-change", { affectsSource: true });
     await flushFrame();
     await flushFrame();
@@ -266,10 +266,10 @@ describe("the language-server bridge", () => {
         onDidChangeCellEditors: () => ({ dispose() {} }),
       },
     ];
-    const client = fakeClient();
-    manager = new LspBridgeManager(client, host);
+    const ide = fakeIde();
+    manager = new LspBridgeManager(ide, host);
 
-    const described = client.opened[0].descriptor.cells;
+    const described = ide.opened[0].descriptor.cells;
     expect(described[0].scopeName).toBe("source.python.ipy");
     expect(described[1].scopeName).toBe("source.python.ipy");
     expect(described[1].editors).toEqual([]);
@@ -277,15 +277,15 @@ describe("the language-server bridge", () => {
   });
 });
 
-describe("the ide-client service consumption", () => {
+describe("the ide service consumption", () => {
   afterEach(() => {
     main.teardownLspBridge();
-    main.ideClient = null;
+    main.ide = null;
     lumine.config.unset("jupyter-view.lsp.enabled");
   });
 
   it("bridges while the service is present and stands down when it goes", () => {
-    const disposable = main.consumeIdeClient(fakeClient());
+    const disposable = main.consumeIde(fakeIde());
     expect(main.lspBridgeManager).toBeDefined();
     disposable.dispose();
     expect(main.lspBridgeManager).toBeNull();
@@ -293,7 +293,7 @@ describe("the ide-client service consumption", () => {
 
   it("honours the lsp.enabled setting as the off switch", () => {
     lumine.config.set("jupyter-view.lsp.enabled", false);
-    const disposable = main.consumeIdeClient(fakeClient());
+    const disposable = main.consumeIde(fakeIde());
     expect(main.lspBridgeManager || null).toBeNull();
     // Flipping it back on connects with the stashed service; the config
     // observer wiring itself lives in activate().

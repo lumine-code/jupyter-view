@@ -90,9 +90,9 @@
     }
   },
   "consumedServices": {
-    "ide-client": {
+    "ide": {
       "versions": {
-        "^1.0.0": "consumeIdeClient"
+        "^1.0.0": "consumeIde"
       }
     },
     "autocomplete.watch-editor": {
@@ -133,7 +133,7 @@
   "configSchema": {
     "lsp": {
       "title": "Language Servers",
-      "description": "Notebook cells and the language servers ide-client runs.",
+      "description": "Notebook cells and the language servers ide runs.",
       "type": "object",
       "collapsed": true,
       "properties": {

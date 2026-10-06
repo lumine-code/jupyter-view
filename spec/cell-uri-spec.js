@@ -1,7 +1,7 @@
 const path = require("path");
 const { buildCellUri, parseCellUri, CELL_SCHEME } = require("../lib/cell-uri");
 
-// This vocabulary must stay byte-identical to ide-client's: the hub mints the
+// This vocabulary must stay byte-identical to ide's: the hub mints the
 // URIs, this package's opener resolves them, and the two never compare notes.
 describe("cell URIs", () => {
   it("round trips a notebook path and cell id", () => {
