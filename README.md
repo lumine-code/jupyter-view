@@ -80,6 +80,7 @@ Commands available in `.tree-view`:
 
 ## Services
 
+- `background-tips.provider`: provided to explain notebook editing in an empty workspace.
 - `mcp.tools`: provided to expose live notebook reads, cell operations, save/open/create and bounded change waits to connected MCP clients.
 - `jupyter.adapter`: provided to describe notebook targets and route session results back into the dispatched notebook.
 - [`jupyter.notebook`](docs/jupyter.notebook.md): provided to expose notebook documents, their editors, and the active notebook item to packages that need notebook-aware behavior.
