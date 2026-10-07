@@ -227,4 +227,23 @@ describe("jupyter adapter kernel language", () => {
     expect(adapter._executionStartTimes.has(secondRun)).toBe(false);
     expect(cell.lastRunTimeText).toBe("second");
   });
+
+  it("clears shared document timers for session shutdown through any API", () => {
+    const { Emitter } = require("lumine");
+    const events = new Emitter();
+    const session = {
+      generation: 1,
+      onDidChangeExecutionState: (callback) => events.on("state", callback),
+      onDidChangeGeneration: (callback) => events.on("generation", callback),
+    };
+    const target = adapter.getRunTarget(document_.getCell(0).id);
+    const clear = spyOn(document_, "clearAllCellTimers").and.callThrough();
+    adapter.beginTargetExecution(target, { kernel: session });
+    adapter.beginTargetExecution(adapter.getRunTarget(target.id), { kernel: session });
+    expect(events.handlersByEventName.state.length).toBe(2);
+    events.emit("state", "shutting-down");
+    expect(clear).toHaveBeenCalledTimes(1);
+    expect(adapter._executionStartTimes.has(target)).toBe(false);
+    events.dispose();
+  });
 });

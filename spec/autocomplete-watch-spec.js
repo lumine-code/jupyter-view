@@ -64,6 +64,31 @@ describe("lib/autocomplete-watch", () => {
     editor.destroy();
   });
 
+  it("keeps replacement registrations when a previous provider detaches", () => {
+    const previous = consumeAutocompleteWatchEditor(watchEditor);
+    const editor = buildEditor();
+    const watched = watchCellEditor(editor);
+    serviceDisposable = consumeAutocompleteWatchEditor(watchEditor);
+    expect(watches[0].disposed).toBe(true);
+    expect(watches[1].disposed).toBe(false);
+    previous.dispose();
+    expect(watches[1].disposed).toBe(false);
+    watched.dispose();
+    editor.destroy();
+  });
+
+  it("does not destroy a newer watcher when its previous owner disposes", () => {
+    const previous = ownership;
+    ownership = createAutocompleteWatch();
+    serviceDisposable = consumeAutocompleteWatchEditor(watchEditor);
+    const editor = buildEditor();
+    const watched = watchCellEditor(editor);
+    previous.dispose();
+    expect(watches[0].disposed).toBe(false);
+    watched.dispose();
+    editor.destroy();
+  });
+
   it("drops its watches when the service goes away, and replays on return", () => {
     serviceDisposable = consumeAutocompleteWatchEditor(watchEditor);
     const editor = buildEditor();

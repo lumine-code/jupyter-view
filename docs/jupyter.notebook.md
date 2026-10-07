@@ -11,7 +11,7 @@ Exposes the open notebook documents and the active one, for packages that need n
 
 A package that needs to know a notebook is open — an exporter, an outline, a linter with notebook-specific rules — asks here, rather than duck-typing pane items. The language-server bridge lives in this package and uses these same shapes internally.
 
-To _execute_ notebook cells, use [`jupyter.adapter`](jupyter.adapter.md) instead.
+To execute notebook cells, submit captured targets through `jupyter.execution`; `jupyter.adapter` describes the notebook to that runtime.
 
 ## Registration
 

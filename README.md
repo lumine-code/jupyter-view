@@ -81,7 +81,7 @@ Commands available in `.tree-view`:
 ## Services
 
 - `mcp.tools`: provided to expose live notebook reads, cell operations, save/open/create and bounded change waits to connected MCP clients.
-- [`jupyter.adapter`](docs/jupyter.adapter.md): provided to let [jupyter-repl](https://github.com/lumine-code/jupyter-repl) execute notebook cells with its normal run commands, routing kernel output, execution counts, focus, and navigation back into the notebook.
+- `jupyter.adapter`: provided to describe notebook targets and route session results back into the dispatched notebook.
 - [`jupyter.notebook`](docs/jupyter.notebook.md): provided to expose notebook documents, their editors, and the active notebook item to packages that need notebook-aware behavior.
 - `search.adapter`: provided to let the search-panel package find and replace cell source in the active notebook.
 - `linter.adapter`: provided to map linter diagnostics from the backing editor onto the visible notebook cells.
@@ -91,7 +91,7 @@ Commands available in `.tree-view`:
 - `autocomplete.watch-editor`: consumed to keep autocomplete active in notebook cell editors.
 - `linter.editors`: consumed to register the backing source editor for linting, since only pane items are linted on their own, and each cell editor render-only so projected diagnostics draw inside the cells.
 - `jupyter.output`: consumed to render stored outputs with jupyter-repl's renderers; without it a notebook falls back to text and images.
-- `jupyter.execution`: consumed to run notebook cells — the run commands route through it back into this package's own adapter.
+- `jupyter.execution`: consumed to execute captured notebook targets with separate acceptance and completion.
 - `tree-view.selection`: consumed to add tree-view entries for opening a selected `.ipynb` as a notebook or as plain JSON source.
 - `scrollmap.widget`: consumed to render notebook scrollmap markers in a standalone scrollbar widget.
 

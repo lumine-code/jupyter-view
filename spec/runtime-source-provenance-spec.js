@@ -35,7 +35,9 @@ describe("executed notebook definition provenance", () => {
         .and.returnValue(Promise.resolve()),
     };
     kernel = {
-      transport: { _connectionGeneration: 1, lifecycle: "ready" },
+      generation: 1,
+      executionState: "idle",
+      destroyed: false,
       onDidChangeExecutionState: (callback) => events.on("state", callback),
     };
     capture();
@@ -91,7 +93,7 @@ describe("executed notebook definition provenance", () => {
     navigation.recordCount(other.document, target, 32);
     expect(navigation.resolveSourceFrame(other, kernel, frame())).toBeNull();
     expect(
-      navigation.resolveSourceFrame(editor, { transport: kernel.transport }, frame()),
+      navigation.resolveSourceFrame(editor, { generation: kernel.generation }, frame()),
     ).toBeNull();
     expect(navigation.resolveSourceFrame(editor, kernel, frame())).toBeTruthy();
   });
@@ -113,14 +115,14 @@ describe("executed notebook definition provenance", () => {
     expect(navigation.resolveSourceFrame(restored, kernel, frame())).toBeNull();
   });
 
-  it("guards both generation reuse and transport replacement before navigation", async () => {
+  it("guards session destruction and generation changes before navigation", async () => {
     const link = navigation.resolveSourceFrame(editor, kernel, frame());
-    kernel.transport = { _connectionGeneration: 1, lifecycle: "ready" };
+    kernel.destroyed = true;
     spyOn(lumine.notifications, "addWarning");
     await link.open();
     expect(editor.revealCellById).not.toHaveBeenCalled();
     capture();
-    kernel.transport._connectionGeneration++;
+    kernel.generation++;
     expect(navigation.resolveSourceFrame(editor, kernel, frame())).toBeNull();
   });
 
@@ -128,7 +130,7 @@ describe("executed notebook definition provenance", () => {
     const link = navigation.resolveSourceFrame(editor, kernel, frame());
     await link.open();
     const guard = editor.revealCellById.calls.mostRecent().args[2];
-    kernel.transport._connectionGeneration++;
+    kernel.generation++;
     expect(guard()).toBe(false);
   });
 
