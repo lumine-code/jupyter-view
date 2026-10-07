@@ -22,6 +22,12 @@ describe("notebook surface theme ownership", () => {
       const gutter = container.querySelector(".cell-gutter");
       expect(getComputedStyle(gutter).color).toBe("rgb(200, 210, 220)");
       expect(getComputedStyle(gutter).backgroundColor).toBe("rgb(50, 60, 70)");
+      cell.classList.add("dragging");
+      const draggingBackground = getComputedStyle(cell).backgroundColor;
+      container.style.setProperty("--text-color", "rgb(100,110,120)");
+      expect(getComputedStyle(cell).backgroundColor).toBe(draggingBackground);
+      container.style.setProperty("--syntax-background-color", "rgb(210,220,230)");
+      expect(getComputedStyle(cell).backgroundColor).not.toBe(draggingBackground);
     } finally {
       container.remove();
       stylesheet.dispose();

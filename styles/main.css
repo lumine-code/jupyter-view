@@ -248,7 +248,11 @@
     /* Drag and drop states */
     &.dragging {
       opacity: 0.5;
-      background-color: rgb(from var(--text-color) r g b / 0.05);
+      background-color: color-mix(
+        in srgb,
+        var(--syntax-text-color) 5%,
+        var(--syntax-background-color)
+      );
     }
 
     &.drop-above {
