@@ -228,6 +228,143 @@ describe("jupyter adapter kernel language", () => {
     expect(cell.lastRunTimeText).toBe("second");
   });
 
+  it("retires a finished job once before its lease is disposed", () => {
+    const cell = document_.getCell(0);
+    const target = adapter.getRunTarget(cell.id);
+    const clear = spyOn(cell, "clearRunning").and.callThrough();
+    const lease = adapter.beginTargetExecution(target);
+    adapter.finishTargetExecution(target, { lastExecutionTime: "done" });
+    lease.dispose();
+    lease.dispose();
+    adapter.finishTargetExecution(target, { lastExecutionTime: "late" });
+    expect(clear).toHaveBeenCalledTimes(1);
+    expect(cell.lastRunTimeText).toBe("done");
+    expect(adapter._executionStartTimes.has(target)).toBe(false);
+  });
+
+  it("retires only a cancelled lease while another job keeps the cell running", () => {
+    const cell = document_.getCell(0);
+    const first = adapter.getRunTarget(cell.id);
+    const second = adapter.getRunTarget(cell.id);
+    const clear = spyOn(cell, "clearRunning").and.callThrough();
+    const previous = adapter.beginTargetExecution(first);
+    const current = adapter.beginTargetExecution(second);
+    previous.dispose();
+    previous.dispose();
+    expect(adapter._executionStartTimes.has(first)).toBe(false);
+    expect(adapter._executionStartTimes.has(second)).toBe(true);
+    expect(clear).not.toHaveBeenCalled();
+    expect(cell.startTime).not.toBeNull();
+    adapter.finishTargetExecution(second, { lastExecutionTime: "current" });
+    current.dispose();
+    expect(clear).toHaveBeenCalledTimes(1);
+    expect(cell.lastRunTimeText).toBe("current");
+  });
+
+  it("keeps a replacement job when an older lease used the same target object", () => {
+    const cell = document_.getCell(0);
+    const target = adapter.getRunTarget(cell.id);
+    const previous = adapter.beginTargetExecution(target);
+    const current = adapter.beginTargetExecution(target);
+    previous.dispose();
+    expect(adapter._executionStartTimes.has(target)).toBe(true);
+    expect(cell.startTime).not.toBeNull();
+    adapter.finishTargetExecution(target, { lastExecutionTime: "replacement" });
+    current.dispose();
+    expect(cell.startTime).toBeNull();
+    expect(cell.lastRunTimeText).toBe("replacement");
+  });
+
+  it("does not mutate destroyed document models when its lease is disposed late", () => {
+    const cell = document_.getCell(0);
+    const clear = spyOn(cell, "clearRunning").and.callThrough();
+    const lease = adapter.beginTargetExecution(adapter.getRunTarget(cell.id));
+    editor.destroy();
+    expect(document_.isDestroyed()).toBe(true);
+    expect(() => lease.dispose()).not.toThrow();
+    expect(clear).not.toHaveBeenCalled();
+  });
+
+  it("rolls back partially subscribed begin state and permits a healthy retry", () => {
+    const { Disposable } = require("lumine");
+    const disposed = jasmine.createSpy("partial observer disposed");
+    const session = {
+      onDidChangeExecutionState: () => new Disposable(disposed),
+      onDidChangeGeneration() {
+        throw new Error("observer rejected");
+      },
+    };
+    const cell = document_.getCell(0);
+    const target = adapter.getRunTarget(cell.id);
+    const running = spyOn(cell, "setRunning").and.callThrough();
+    expect(() => adapter.beginTargetExecution(target, { kernel: session })).toThrowError(
+      "observer rejected",
+    );
+    expect(disposed).toHaveBeenCalledTimes(1);
+    expect(running).not.toHaveBeenCalled();
+    expect(adapter._executionStartTimes.has(target)).toBe(false);
+    session.onDidChangeGeneration = () => new Disposable();
+    const lease = adapter.beginTargetExecution(target, { kernel: session });
+    lease.dispose();
+    expect(running).toHaveBeenCalledTimes(1);
+    expect(cell.startTime).toBeNull();
+  });
+
+  it("releases a timer installed before a running-state hook rejects begin", () => {
+    const cell = document_.getCell(0);
+    const target = adapter.getRunTarget(cell.id);
+    const setRunning = cell.setRunning;
+    spyOn(cell, "setRunning").and.callFake(() => {
+      setRunning.call(cell);
+      throw new Error("running hook rejected");
+    });
+    expect(() => adapter.beginTargetExecution(target)).toThrowError("running hook rejected");
+    expect(cell.startTime).toBeNull();
+    expect(cell._runningTimer).toBeNull();
+    expect(adapter._executionStartTimes.has(target)).toBe(false);
+  });
+
+  it("rolls back both observer groups when provenance subscription rejects begin", () => {
+    const { Emitter } = require("lumine");
+    const events = new Emitter();
+    let generations = 0;
+    const session = {
+      generation: 1,
+      onDidChangeExecutionState: (callback) => events.on("state", callback),
+      onDidChangeGeneration(callback) {
+        if (++generations === 2) throw new Error("provenance observer rejected");
+        return events.on("generation", callback);
+      },
+    };
+    const cell = document_.getCell(0);
+    const target = adapter.getRunTarget(cell.id);
+    const running = spyOn(cell, "setRunning").and.callThrough();
+    expect(() => adapter.beginTargetExecution(target, { kernel: session })).toThrowError(
+      "provenance observer rejected",
+    );
+    expect(events.handlersByEventName.state).toBeUndefined();
+    expect(events.handlersByEventName.generation).toBeUndefined();
+    expect(running).not.toHaveBeenCalled();
+    expect(adapter._executionStartTimes.has(target)).toBe(false);
+    events.dispose();
+  });
+
+  it("returns a safely disposable lease after the document closes reentrantly during begin", () => {
+    const cell = document_.getCell(0);
+    const target = adapter.getRunTarget(cell.id);
+    const setRunning = cell.setRunning;
+    spyOn(cell, "setRunning").and.callFake(() => {
+      setRunning.call(cell);
+      document_.destroy();
+    });
+    const clear = spyOn(cell, "clearRunning").and.callThrough();
+    const lease = adapter.beginTargetExecution(target);
+    expect(typeof lease.dispose).toBe("function");
+    expect(() => lease.dispose()).not.toThrow();
+    expect(clear).not.toHaveBeenCalled();
+    expect(cell._runningTimer).toBeNull();
+  });
+
   it("clears shared document timers for session shutdown through any API", () => {
     const { Emitter } = require("lumine");
     const events = new Emitter();
