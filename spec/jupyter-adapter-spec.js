@@ -266,4 +266,27 @@ describe("jupyter adapter kernel language", () => {
     expect(document_.isDestroyed()).toBe(false);
     events.dispose();
   });
+
+  it("keeps a replacement session's timers when the previous session finishes shutting down", () => {
+    const { Emitter } = require("lumine");
+    const previousEvents = new Emitter();
+    const previous = {
+      generation: 1,
+      onDidChangeExecutionState: (callback) => previousEvents.on("state", callback),
+      onDidDestroy: (callback) => previousEvents.on("destroy", callback),
+    };
+    const first = adapter.getRunTarget(document_.getCell(0).id);
+    adapter.beginTargetExecution(first, { kernel: previous });
+    adapter.finishTargetExecution(first, { lastExecutionTime: "first" });
+    const current = adapter.getRunTarget(first.id);
+    adapter.beginTargetExecution(current, { kernel: { generation: 1 } });
+    const clear = spyOn(document_, "clearAllCellTimers").and.callThrough();
+    previousEvents.emit("state", "shutting-down");
+    previousEvents.emit("destroy");
+    expect(clear).not.toHaveBeenCalled();
+    expect(adapter._executionStartTimes.has(current)).toBe(true);
+    adapter.finishTargetExecution(current, { lastExecutionTime: "current" });
+    expect(document_.getCell(0).lastRunTimeText).toBe("current");
+    previousEvents.dispose();
+  });
 });
