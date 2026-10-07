@@ -112,7 +112,8 @@ describe("notebook view", () => {
 
     const host = document.createElement("div");
     host.className = "jupyter-view";
-    host.style.setProperty("--text-color", "rgb(12, 34, 56)");
+    host.style.setProperty("--syntax-text-color", "rgb(12, 34, 56)");
+    host.style.setProperty("--text-color", "rgb(180, 190, 200)");
     const themeRule = document.createElement("style");
     themeRule.textContent = ".selected { color: rgb(210, 20, 30); }";
     document.head.appendChild(themeRule);

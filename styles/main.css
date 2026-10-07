@@ -206,7 +206,7 @@
     background-color: var(--syntax-background-color);
     /* UI themes use the generic `.selected` class for list text. A notebook
        cell uses it only for its border, so keep its content color stable. */
-    color: var(--text-color);
+    color: var(--syntax-text-color);
     transition: border-color 0.15s ease;
 
     &:hover {
@@ -270,7 +270,8 @@
     width: var(--jupyter-gutter-width);
     flex-shrink: 0;
     padding: var(--jupyter-cell-padding);
-    background-color: rgb(from var(--text-color) r g b / 0.03);
+    color: var(--text-color);
+    background-color: var(--tool-panel-background-color);
     border-right: 1px solid var(--jupyter-cell-border);
     display: flex;
     flex-direction: column;
