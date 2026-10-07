@@ -246,4 +246,24 @@ describe("jupyter adapter kernel language", () => {
     expect(adapter._executionStartTimes.has(target)).toBe(false);
     events.dispose();
   });
+
+  it("releases retired session observers while the notebook document stays open", () => {
+    const { Emitter } = require("lumine");
+    const events = new Emitter();
+    const session = {
+      generation: 1,
+      onDidChangeExecutionState: (callback) => events.on("state", callback),
+      onDidChangeGeneration: (callback) => events.on("generation", callback),
+      onDidDestroy: (callback) => events.on("destroy", callback),
+    };
+    adapter.beginTargetExecution(adapter.getRunTarget(document_.getCell(0).id), {
+      kernel: session,
+    });
+    expect(events.handlersByEventName.state.length).toBe(2);
+    events.emit("destroy");
+    expect(events.handlersByEventName.state).toBeUndefined();
+    expect(events.handlersByEventName.generation).toBeUndefined();
+    expect(document_.isDestroyed()).toBe(false);
+    events.dispose();
+  });
 });

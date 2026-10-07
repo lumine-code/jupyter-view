@@ -84,6 +84,21 @@ describe("notebook traceback provenance", () => {
     ).toBeTruthy();
   });
 
+  it("invalidates retained output links when the public session generation changes", async () => {
+    kernel.generation = 1;
+    const target = execute(0, 8);
+    const output = { output_type: "error" };
+    navigation.recordOutput(document_, target, output);
+    const resolve = navigation.optionsForOutput(editor, output).resolveTracebackFrame;
+    const link = resolve({ executionCount: 8, line: 1 });
+    expect(link).toBeTruthy();
+    kernel.generation++;
+    expect(resolve({ executionCount: 8, line: 1 })).toBeNull();
+    spyOn(lumine.notifications, "addWarning");
+    await link.open();
+    expect(editor.revealCellById).not.toHaveBeenCalled();
+  });
+
   it("maps a selected cell body and preserves a SyntaxError column range", async () => {
     document_.cells[0].source = "before\n    x = y\nafter";
     const target = { id: "first-id", source: "x = y", row: 1 };
