@@ -72,6 +72,13 @@ jobs:
         with:
           repository: lumine-code/lumine
           path: lumine
+      - name: Check out the original Image Editor for the native ownership control
+        if: runner.os == 'Linux'
+        uses: actions/checkout@v7
+        with:
+          repository: lumine-code/image-editor
+          ref: 6a310390f7949855b41e01ef0ac9a5e7dec83893
+          path: image-editor-original
       - uses: actions/setup-node@v7
         with:
           node-version-file: lumine/.nvmrc
@@ -120,4 +127,21 @@ jobs:
             xvfb-run --auto-servernum npm start -- --test ../jupyter-view/spec
           else
             npm start -- --test ../jupyter-view/spec
+          fi
+      - name: Verify current POSIX ownership before any path repair
+        if: runner.os == 'Linux'
+        working-directory: lumine
+        timeout-minutes: 5
+        run: |
+          export LUMINE_TEST_IMAGE_EDITOR_PATH="$GITHUB_WORKSPACE/image-editor-original"
+          set +e
+          xvfb-run --auto-servernum npm start -- --test ../jupyter-view/diagnostics/posix-file-ownership-spec.js > "$RUNNER_TEMP/posix-ownership-original.log" 2>&1
+          ownership_status=$?
+          set -e
+          cat "$RUNNER_TEMP/posix-ownership-original.log"
+          test "$ownership_status" -eq 1
+          grep '3 specs, 2 failures' "$RUNNER_TEMP/posix-ownership-original.log"
+          if grep '\[FAIL\]' "$RUNNER_TEMP/posix-ownership-original.log" | grep -Ev '^native POSIX file ownership (opens two case-distinct notebook files|locates both case-distinct image filenames) '; then
+            echo "Unexpected native ownership-control failure"
+            exit 1
           fi
