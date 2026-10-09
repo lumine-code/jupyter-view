@@ -79,6 +79,19 @@ jobs:
           repository: lumine-code/image-editor
           ref: 6a310390f7949855b41e01ef0ac9a5e7dec83893
           path: image-editor-original
+      - name: Check out the original notebook runtime for the ownership control
+        if: runner.os == 'Linux'
+        uses: actions/checkout@v7
+        with:
+          path: jupyter-view-original
+          ref: 4e15a07b338e0f7894afbaf088d1e17de6e53d5c
+      - name: Check out the repaired Image Editor for current native regressions
+        if: runner.os == 'Linux'
+        uses: actions/checkout@v7
+        with:
+          repository: lumine-code/image-editor
+          ref: fb5a1b99c3e32be1ebbc4e0ba4a15f28a883ce83
+          path: image-editor-current
       - uses: actions/setup-node@v7
         with:
           node-version-file: lumine/.nvmrc
@@ -119,6 +132,24 @@ jobs:
       - name: Install spec dependency packages
         working-directory: lumine
         run: node script/install-spec-packages.js --package ../jupyter-view --home "$RUNNER_TEMP/lumine-home" --github-env "$GITHUB_ENV"
+      - name: Verify identical native notebook regression against the original full runtime
+        if: runner.os == 'Linux'
+        working-directory: lumine
+        timeout-minutes: 20
+        run: |
+          ln -s "$GITHUB_WORKSPACE/jupyter-view/node_modules" "$GITHUB_WORKSPACE/jupyter-view-original/node_modules"
+          cp ../jupyter-view/spec/native-path-ownership-spec.js ../jupyter-view-original/spec/
+          set +e
+          xvfb-run --auto-servernum npm start -- --test ../jupyter-view-original/spec > "$RUNNER_TEMP/notebook-original.log" 2>&1
+          original_status=$?
+          set -e
+          cat "$RUNNER_TEMP/notebook-original.log"
+          test "$original_status" -eq 1
+          grep -E '[0-9]+ specs, 1 failure' "$RUNNER_TEMP/notebook-original.log"
+          if grep '\[FAIL\]' "$RUNNER_TEMP/notebook-original.log" | grep -Ev '^notebook native path ownership keeps case-distinct native files '; then
+            echo "Unexpected original notebook-runtime failure"
+            exit 1
+          fi
       - name: Run the Jasmine spec suite
         working-directory: lumine
         timeout-minutes: 20
@@ -128,14 +159,14 @@ jobs:
           else
             npm start -- --test ../jupyter-view/spec
           fi
-      - name: Verify current POSIX ownership before any path repair
+      - name: Verify pinned original POSIX ownership separately from current regressions
         if: runner.os == 'Linux'
         working-directory: lumine
         timeout-minutes: 5
         run: |
           export LUMINE_TEST_IMAGE_EDITOR_PATH="$GITHUB_WORKSPACE/image-editor-original"
           set +e
-          xvfb-run --auto-servernum npm start -- --test ../jupyter-view/diagnostics/posix-file-ownership-spec.js > "$RUNNER_TEMP/posix-ownership-original.log" 2>&1
+          xvfb-run --auto-servernum npm start -- --test ../jupyter-view-original/diagnostics/posix-file-ownership-spec.js > "$RUNNER_TEMP/posix-ownership-original.log" 2>&1
           ownership_status=$?
           set -e
           cat "$RUNNER_TEMP/posix-ownership-original.log"
@@ -145,3 +176,10 @@ jobs:
             echo "Unexpected native ownership-control failure"
             exit 1
           fi
+      - name: Run current native POSIX ownership regressions
+        if: runner.os == 'Linux'
+        working-directory: lumine
+        timeout-minutes: 5
+        run: |
+          export LUMINE_TEST_IMAGE_EDITOR_PATH="$GITHUB_WORKSPACE/image-editor-current"
+          xvfb-run --auto-servernum npm start -- --test ../jupyter-view/diagnostics/posix-file-ownership-spec.js
