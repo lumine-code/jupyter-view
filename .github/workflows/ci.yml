@@ -40,16 +40,30 @@ jobs:
         run: npm run lint
       - name: Check formatting
         run: npm run format:check
+      - name: Audit dependencies
+        run: npm audit --audit-level=moderate
+      - name: Check package contents
+        run: npm pack --dry-run
 
   integration:
     # Run the Jasmine spec suite inside a real Lumine build. The specs use the
     # editor runtime (the notebook document model, the watchFile path-watcher,
-    # the jupyter.adapter contract), so this is the single place they run in CI.
-    name: Lumine integration specs
-    runs-on: ubuntu-latest
+    # the jupyter.adapter contract), including real filesystem exports.
+    name: Lumine integration specs on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
     env:
       LUMINE_JASMINE_REPORTER: list
+      TEMP: ${{ github.workspace }}/jupyter-view-spec-tmp
+      TMP: ${{ github.workspace }}/jupyter-view-spec-tmp
+      TMPDIR: ${{ github.workspace }}/jupyter-view-spec-tmp
     steps:
       - uses: actions/checkout@v7
         with:
@@ -63,16 +77,16 @@ jobs:
           node-version-file: lumine/.nvmrc
           cache: npm
           cache-dependency-path: lumine/package-lock.json
+      - name: Create the private temporary directory
+        run: mkdir -p "$TEMP"
       - name: Install Linux build and headless-display dependencies
+        if: runner.os == 'Linux'
         run: |
           # A third-party repository on the runner image answering 403 must not
           # fail the job: the lists this actually needs still fetched, and the
           # install below stays strict, so a missing package still stops us.
           sudo apt-get update || true
           sudo apt-get install -y xvfb libx11-dev libxkbfile-dev libsecret-1-dev
-      - name: Install package dependencies
-        working-directory: jupyter-view
-        run: npm ci --ignore-scripts
       # Mirrors the editor's own CI: install without scripts (patch-package and
       # some native install scripts misbehave; native modules are rebuilt for
       # Electron below), then reproduce the pieces that matter. npm records the
@@ -81,6 +95,9 @@ jobs:
       # retries absorb flaky git-hosted fork downloads.
       - name: Use HTTPS for GitHub git dependencies
         run: git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+      - name: Install package dependencies
+        working-directory: jupyter-view
+        run: npm ci --ignore-scripts
       - name: Install editor dependencies
         working-directory: lumine
         run: |
@@ -98,4 +115,9 @@ jobs:
       - name: Run the Jasmine spec suite
         working-directory: lumine
         timeout-minutes: 20
-        run: xvfb-run --auto-servernum npm start -- --test ../jupyter-view/spec
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            xvfb-run --auto-servernum npm start -- --test ../jupyter-view/spec
+          else
+            npm start -- --test ../jupyter-view/spec
+          fi
