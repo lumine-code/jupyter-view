@@ -61,6 +61,7 @@ jobs:
         shell: bash
     env:
       LUMINE_JASMINE_REPORTER: list
+      LUMINE_DISABLE_SHELLING_OUT_FOR_ENVIRONMENT: "true"
       TEMP: ${{ github.workspace }}/jupyter-view-spec-tmp
       TMP: ${{ github.workspace }}/jupyter-view-spec-tmp
       TMPDIR: ${{ github.workspace }}/jupyter-view-spec-tmp
