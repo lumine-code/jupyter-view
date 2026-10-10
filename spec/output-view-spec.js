@@ -1,6 +1,7 @@
 const etch = require("@lumine-code/etch");
 const OutputView = require("../lib/output-view");
 const outputRenderer = require("../lib/output-renderer");
+const navigation = require("../lib/traceback-navigation");
 
 // Rendering lives in jupyter-repl now, behind the `jupyter.output` service:
 // one implementation for the whole family, exercised by that package's own
@@ -120,6 +121,57 @@ describe("output view", () => {
       // double; what matters is that everything went through, normalized.
       expect(service.calls.length).toBeGreaterThan(0);
       expect(service.calls.every((output) => output._normalized)).toBe(true);
+    });
+
+    it("keeps each output's captured session generation across reruns and renderer replacement", () => {
+      const cell = { id: "plot", source: "plot()" };
+      const editor = { document: { cells: [cell] } };
+      const session = { generation: 3 };
+      const output = Object.freeze({
+        output_type: "display_data",
+        data: Object.freeze({ "text/plain": "plot" }),
+        metadata: Object.freeze({}),
+      });
+      const serialized = JSON.stringify(output);
+      let job;
+      const capture = (record) => {
+        job?.dispose();
+        const target = { id: cell.id, source: cell.source, row: 0 };
+        job = navigation.beginExecution(editor.document, target, session);
+        navigation.recordOutput(editor.document, target, record);
+      };
+      const render = spyOn(service, "renderDisplay").and.callThrough();
+      try {
+        capture(output);
+        view = new OutputView({ outputs: [output], editor });
+        flush(view);
+        expect(render.calls.mostRecent().args[1].kernelGeneration).toBe(3);
+
+        session.generation++;
+        flush(view);
+        expect(render.calls.mostRecent().args[1].kernel).toBe(session);
+        expect(render.calls.mostRecent().args[1].kernelGeneration).toBe(3);
+
+        const rerun = Object.freeze({ ...output });
+        capture(rerun);
+        view.update({ outputs: [rerun] });
+        flush(view);
+        expect(render.calls.mostRecent().args[1].kernelGeneration).toBe(4);
+
+        outputRenderer.set(null);
+        flush(view);
+        expect(view.element.querySelector(".output-text").textContent).toBe("plot");
+        const replacement = fakeService();
+        const replacedRender = spyOn(replacement, "renderDisplay").and.callThrough();
+        outputRenderer.set(replacement);
+        flush(view);
+        expect(replacedRender.calls.mostRecent().args[1].kernel).toBe(session);
+        expect(replacedRender.calls.mostRecent().args[1].kernelGeneration).toBe(4);
+        expect(JSON.stringify(output)).toBe(serialized);
+        expect(JSON.stringify(rerun)).toBe(serialized);
+      } finally {
+        job?.dispose();
+      }
     });
 
     it("upgrades an already-mounted view when the service arrives", () => {
