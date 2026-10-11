@@ -374,11 +374,12 @@ class CellView {
       this.handleGrammarAssignment();
     });
 
-    // Scroll to cursor position on any cursor activity (typing, arrow keys, clicks)
-    this.editorCursorSubscription = this.editor.onDidChangeCursorPosition(() => {
+    // The notebook owns the scroll container. Follow explicit editor requests,
+    // so selection restoration and setters with autoscroll:false stay still.
+    this.editorCursorSubscription = this.editor.onDidRequestAutoscroll((request) => {
       const { notebookView, index } = this.props;
       if (notebookView) {
-        notebookView.scrollToCursor(index, this.editor);
+        notebookView.scrollToEditorRange(index, this.editor, request);
       }
     });
 
@@ -677,7 +678,7 @@ class CellView {
       const position = this.editor.getCursorBufferPosition();
       try {
         this.editor.getBuffer().setTextViaDiff(source);
-        this.editor.setCursorBufferPosition(position);
+        this.editor.setCursorBufferPosition(position, { autoscroll: false });
       } finally {
         this._updatingFromExternal = wasUpdatingFromExternal;
       }

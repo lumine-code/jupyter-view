@@ -233,7 +233,7 @@ class NotebookView {
         view.focus();
         if (view.editor) {
           const row = toEnd ? view.editor.getLastBufferRow() : 0;
-          view.editor.setCursorBufferPosition([row, toEnd ? Infinity : 0]);
+          view.editor.setCursorBufferPosition([row, toEnd ? Infinity : 0], { mode: "zone" });
         }
       });
     };
@@ -738,7 +738,7 @@ class NotebookView {
     if (cells && cells[index]) {
       const cellView = this.cellViews.get(cells[index].id);
       if (cellView && cellView.editor) {
-        this.scrollToCursor(index, cellView.editor);
+        this.scrollToCursor(index, cellView.editor, { mode: "nearest" });
       }
     }
   }
@@ -1049,7 +1049,12 @@ class NotebookView {
     }
   }
 
-  scrollToCursor(index, editor) {
+  scrollToCursor(index, editor, options = { mode: "zone" }) {
+    if (!this.cellsContainer || !this.props.cells?.[index]) return;
+    editor.scrollToCursorPosition(options);
+  }
+
+  scrollToEditorRange(index, editor, { screenRange, options }) {
     if (!this.cellsContainer) return;
     const cells = this.props.cells;
     if (!cells || !cells[index]) return;
@@ -1059,27 +1064,42 @@ class NotebookView {
     const lineHeight = editor.getLineHeightInPixels();
     if (!lineHeight) return;
 
-    const cursorRow = editor.getLastCursor().getScreenPosition().row;
     const editorRect = cellView.editorElement.getBoundingClientRect();
     const containerRect = this.cellsContainer.getBoundingClientRect();
 
     // Mirror Lumine's getVerticalAutoscrollMargin() logic
     const containerHeight = this.cellsContainer.clientHeight;
     const maxMarginLines = Math.floor((containerHeight / lineHeight - 1) / 2);
-    const margin = Math.min(editor.verticalScrollMargin, maxMarginLines) * lineHeight;
+    const margin = Math.max(0, Math.min(editor.verticalScrollMargin, maxMarginLines)) * lineHeight;
 
-    const cursorTop = editorRect.top + cursorRow * lineHeight;
-    const cursorBottom = cursorTop + lineHeight;
+    const rangeTop =
+      editorRect.top +
+      cellView.editorElement.pixelPositionForScreenPosition(screenRange.start).top -
+      containerRect.top;
+    const rangeBottom =
+      editorRect.top +
+      cellView.editorElement.pixelPositionForScreenPosition(screenRange.end).top +
+      lineHeight -
+      containerRect.top;
+    const [afterLeavingTop, afterLeavingBottom] = options.mode;
+    const travel = containerHeight - 2 * margin - (rangeBottom - rangeTop);
+    const topOffset = margin + travel * (afterLeavingTop / 100);
+    const bottomOffset = margin + travel * (afterLeavingBottom / 100);
 
-    let newScrollTop = null;
-    if (cursorTop - margin < containerRect.top) {
-      newScrollTop = this.cellsContainer.scrollTop + (cursorTop - margin - containerRect.top);
-    } else if (cursorBottom + margin > containerRect.bottom) {
-      newScrollTop = this.cellsContainer.scrollTop + (cursorBottom + margin - containerRect.bottom);
+    let offset = null;
+    if (travel < 0) {
+      offset = options.reversed !== false ? topOffset : bottomOffset;
+    } else if (rangeTop < Math.min(topOffset, bottomOffset)) {
+      offset = topOffset;
+    } else if (rangeTop > Math.max(topOffset, bottomOffset)) {
+      offset = bottomOffset;
     }
 
-    if (newScrollTop !== null) {
-      this.cellsContainer.scrollTo({ top: newScrollTop, behavior: "instant" });
+    if (offset !== null) {
+      this.cellsContainer.scrollTo({
+        top: this.cellsContainer.scrollTop + rangeTop - offset,
+        behavior: "instant",
+      });
     }
   }
 

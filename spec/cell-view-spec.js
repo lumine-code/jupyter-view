@@ -56,6 +56,23 @@ describe("cell view", () => {
     expect(view.element.querySelector("lumine-text-editor.jupyter-cell-editor")).toBeTruthy();
   });
 
+  it("scrolls the notebook only when its editor requests a reveal", () => {
+    const notebookView = { scrollToEditorRange: jasmine.createSpy("reveal cell range") };
+    view = mount(makeCell(), { notebookView });
+    notebookView.scrollToEditorRange.calls.reset();
+
+    view.editor.setCursorBufferPosition([0, 3], { autoscroll: false });
+    expect(notebookView.scrollToEditorRange).not.toHaveBeenCalled();
+
+    view.editor.scrollToCursorPosition({ mode: [25, 75] });
+    expect(notebookView.scrollToEditorRange).toHaveBeenCalledTimes(1);
+    const [index, editor, request] = notebookView.scrollToEditorRange.calls.mostRecent().args;
+    expect(index).toBe(0);
+    expect(editor).toBe(view.editor);
+    expect(request.options.mode).toEqual([25, 75]);
+    expect(request.screenRange.start.toArray()).toEqual([0, 3]);
+  });
+
   it("uses Python when the document IPython grammar is unavailable", async () => {
     await lumine.packages.activatePackage("language-python");
     await lumine.packages.activatePackage("language-ipython");
