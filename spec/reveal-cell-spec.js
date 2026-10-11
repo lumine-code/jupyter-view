@@ -36,6 +36,32 @@ describe("JupyterNotebookEditor.revealCell", () => {
     expect(editor.activeCellIndex).toBe(2);
   });
 
+  it("completes source-range navigation with a native cell editor", async () => {
+    await lumine.workspace.open(editor);
+    jasmine.attachToDOM(lumine.workspace.getElement());
+    const cell = document_.cells[2];
+    document_.updateCellSource(2, "first\nsecond\nthird");
+    editor.view.setMode("edit");
+    const cellEditor = editor.getCellEditorById(cell.id);
+    expect(cellEditor).toBeTruthy();
+    const requested = jasmine.createSpy("native cell reveal");
+    const subscription = cellEditor.onDidRequestAutoscroll(requested);
+    try {
+      const range = [
+        [1, 0],
+        [1, 3],
+      ];
+      await editor.revealCellById(cell.id, range);
+      expect(cellEditor.getSelectedBufferRange().serialize()).toEqual(range);
+      expect(requested.calls.mostRecent().args[0].options.mode).toEqual(cellEditor.getScrollZone());
+      expect(requested.calls.mostRecent().args[0].options.reversed).toBe(
+        cellEditor.getLastSelection().isReversed(),
+      );
+    } finally {
+      subscription.dispose();
+    }
+  });
+
   it("reveals a linter message through its cell and cell-relative position", () => {
     spyOn(editor, "revealCell");
     const message = {
