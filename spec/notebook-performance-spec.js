@@ -79,7 +79,13 @@ describe("notebook change tracking", () => {
     expect(second.getFileState()).toBe("modified");
     expect(firstStates).toEqual(["modified"]);
     expect(secondStates).toEqual(["modified"]);
+    expect(first.getPaneItemDocument()).toBe(second.getPaneItemDocument());
     expect(first.shouldPromptToSave()).toBe(false, "another split still owns the document");
+    expect(first.shouldPromptToSave({ lastView: false })).toBe(false);
+    expect(first.shouldPromptToSave({ lastView: true })).toBe(
+      true,
+      "a batch closing every view must still prompt",
+    );
 
     second.destroy();
     expect(first.shouldPromptToSave()).toBe(true);
