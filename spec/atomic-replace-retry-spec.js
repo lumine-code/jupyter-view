@@ -1,4 +1,4 @@
-const fs = require("node:fs");
+const fs = require("fs");
 const os = require("node:os");
 const path = require("node:path");
 
@@ -14,7 +14,9 @@ describe("notebook atomic replacement under a Windows file lock", () => {
         await lumine.packages.activatePackage(name)
       ).resourceLoadPromise;
     const pack = await lumine.packages.activatePackage("jupyter-view");
-    directory = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "notebook-replace-owned-")));
+    directory = await fs.promises.realpath(
+      fs.mkdtempSync(path.join(os.tmpdir(), "notebook-replace-owned-")),
+    );
     filePath = path.join(directory, "notebook.ipynb");
     fs.writeFileSync(
       filePath,
@@ -42,7 +44,7 @@ describe("notebook atomic replacement under a Windows file lock", () => {
     editor?.destroy();
     await lumine.packages.deactivatePackage("jupyter-view");
     await lumine.fileWatchClient.settlePendingTeardown();
-    const relative = path.relative(fs.realpathSync(os.tmpdir()), directory);
+    const relative = path.relative(await fs.promises.realpath(os.tmpdir()), directory);
     if (!relative || relative.startsWith("..") || path.isAbsolute(relative))
       throw new Error("Unsafe notebook replacement scratch");
     fs.rmSync(directory, { recursive: true, force: true });

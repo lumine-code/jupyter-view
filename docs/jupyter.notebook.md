@@ -97,6 +97,8 @@ The registry answers with documents and change notifications:
 
 A notebook editor carries a `document` holding the cells, and a `view` for the rendered UI. A document handed out by `observeDocuments` may still be loading — its cells and metadata fill in through its own events (`onDidLoad`, `onDidReload`, `onDidChange`), so treat the document as live rather than reading it once.
 
+Pane copies share a retained notebook document and kernel owner. Each has fresh cell editors and output DOM, plus independent active and selected cells, cursors, mode and scroll position. `copy({signal})` flushes current source edits and waits for an in-progress document load when necessary; aborting the copy leaves the source load running. View-state restoration does not focus the copy, and creating an output view never executes its cell.
+
 The editor's `getFileTextEditor()` is the `.ipynb` identity used by file-oriented status controls. Its encoding is read-only UTF-8, while `getLineEndings()`, `setLineEnding(value)`, and `onDidChangeLineEndings(callback)` expose the physical LF/CRLF state that notebook saves preserve. `getActiveEmbeddedTextEditor()` returns a cell editor only in edit mode, so grammar UI is hidden in command mode.
 
 Cell types and boundaries come from the notebook document. Code cells use original language packages; a Python cell does not interpret `# %%` comments as document boundaries. In Python notebooks, a leading cell magic selects the body grammar and excludes its header from syntax parsing through the editor's buffer-owned root ranges. The full header remains in saved and executed source. A manual cell language overrides body syntax without changing the shared notebook kernel.
