@@ -128,6 +128,18 @@
       },
       {
         "label": "Open Notebook",
+        "afterGroupContaining": [
+          "graviss:open-source-on-right",
+          "markdown-preview:preview-file",
+          "image-editor:open-in-new-tab",
+          "search-panel:project-show-in-current-directory",
+          "open-external:show",
+          "tree-view:open-selected-entry-up",
+          "native-clip:paste",
+          "tree-view:paste",
+          "tree-view:remove",
+          "tree-view:add-file"
+        ],
         "command": "jupyter-view:open-notebook"
       },
       {
