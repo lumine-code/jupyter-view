@@ -1,6 +1,15 @@
 {
   "menu": [
     {
+      "label": "File",
+      "submenu": [
+        {
+          "label": "New Jupyter Notebook",
+          "command": "jupyter-view:new-notebook"
+        }
+      ]
+    },
+    {
       "label": "Packages",
       "submenu": [
         {
