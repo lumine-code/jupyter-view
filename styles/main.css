@@ -26,7 +26,8 @@
 
 /* All styles scoped under .jupyter-view */
 .jupyter-view {
-  --jupyter-cell-border: rgb(from var(--text-color) r g b / 0.1);
+  --jupyter-cell-border: color-mix(in srgb, var(--text-color) 65%, var(--app-background-color));
+  --jupyter-cell-divider: rgb(from var(--text-color) r g b / 0.1);
   --jupyter-cell-active-border: var(--text-color-info);
   --jupyter-cell-error-border: var(--text-color-error);
   --jupyter-gutter-width: 72px;
@@ -209,8 +210,7 @@
     transition: border-color 0.15s ease;
 
     &:hover {
-      border-color: rgb(from var(--text-color) r g b / 0.2);
-      border-left-color: rgb(from var(--text-color) r g b / 0.2);
+      border-color: color-mix(in srgb, var(--text-color) 75%, var(--app-background-color));
     }
 
     &.active {
@@ -275,7 +275,7 @@
     padding: var(--jupyter-cell-padding);
     color: var(--text-color);
     background-color: var(--tool-panel-background-color);
-    border-right: 1px solid var(--jupyter-cell-border);
+    border-right: 1px solid var(--jupyter-cell-divider);
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -448,7 +448,7 @@
 
   /* Cell output area (only styled when it has content) */
   .cell-output-container:not(:empty) {
-    border-top: 1px solid var(--jupyter-cell-border);
+    border-top: 1px solid var(--jupyter-cell-divider);
     padding: var(--jupyter-cell-padding);
     background-color: transparent;
   }
