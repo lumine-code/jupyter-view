@@ -142,9 +142,10 @@ jobs:
           cp ../jupyter-view/spec/native-path-ownership-spec.js ../jupyter-view-original/spec/
           # Run the identical native assertions against the historical runtime;
           # its unrelated old pane fixtures target a retired Core contract.
-          # Xvfb's authority directory belongs outside test-owned scratch space.
+          # Keep Xvfb authority outside test-owned scratch space and avoid its
+          # temporary-directory cleanup replacing the test's exit status.
           set +e
-          TMPDIR="$RUNNER_TEMP" xvfb-run --auto-servernum env TMPDIR="$TEMP" npm start -- --test ../jupyter-view-original/spec/native-path-ownership-spec.js > "$RUNNER_TEMP/notebook-original.log" 2>&1
+          TMPDIR="$RUNNER_TEMP" xvfb-run --auto-servernum --auth-file="$RUNNER_TEMP/notebook-original.xauth" env TMPDIR="$TEMP" npm start -- --test ../jupyter-view-original/spec/native-path-ownership-spec.js > "$RUNNER_TEMP/notebook-original.log" 2>&1
           original_status=$?
           set -e
           cat "$RUNNER_TEMP/notebook-original.log"
@@ -159,7 +160,7 @@ jobs:
         timeout-minutes: 20
         run: |
           if [[ "$RUNNER_OS" == "Linux" ]]; then
-            TMPDIR="$RUNNER_TEMP" xvfb-run --auto-servernum env TMPDIR="$TEMP" npm start -- --test ../jupyter-view/spec
+            TMPDIR="$RUNNER_TEMP" xvfb-run --auto-servernum --auth-file="$RUNNER_TEMP/notebook-current.xauth" env TMPDIR="$TEMP" npm start -- --test ../jupyter-view/spec
           else
             npm start -- --test ../jupyter-view/spec
           fi
@@ -170,7 +171,7 @@ jobs:
         run: |
           export LUMINE_TEST_IMAGE_EDITOR_PATH="$GITHUB_WORKSPACE/image-editor-original"
           set +e
-          TMPDIR="$RUNNER_TEMP" xvfb-run --auto-servernum env TMPDIR="$TEMP" npm start -- --test ../jupyter-view-original/diagnostics/posix-file-ownership-spec.js > "$RUNNER_TEMP/posix-ownership-original.log" 2>&1
+          TMPDIR="$RUNNER_TEMP" xvfb-run --auto-servernum --auth-file="$RUNNER_TEMP/posix-original.xauth" env TMPDIR="$TEMP" npm start -- --test ../jupyter-view-original/diagnostics/posix-file-ownership-spec.js > "$RUNNER_TEMP/posix-ownership-original.log" 2>&1
           ownership_status=$?
           set -e
           cat "$RUNNER_TEMP/posix-ownership-original.log"
@@ -186,4 +187,4 @@ jobs:
         timeout-minutes: 5
         run: |
           export LUMINE_TEST_IMAGE_EDITOR_PATH="$GITHUB_WORKSPACE/image-editor-current"
-          TMPDIR="$RUNNER_TEMP" xvfb-run --auto-servernum env TMPDIR="$TEMP" npm start -- --test ../jupyter-view/diagnostics/posix-file-ownership-spec.js
+          TMPDIR="$RUNNER_TEMP" xvfb-run --auto-servernum --auth-file="$RUNNER_TEMP/posix-current.xauth" env TMPDIR="$TEMP" npm start -- --test ../jupyter-view/diagnostics/posix-file-ownership-spec.js
