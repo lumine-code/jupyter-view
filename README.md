@@ -14,6 +14,8 @@ Open and edit Jupyter notebooks.
 - **Source and export**: open notebooks as plain JSON from the notebook or tree view, and export Python scripts or HTML.
 - **MCP automation**: let connected assistants read, create, open, edit and save live notebooks, with bounded output reads, revision guards, retry-safe edits and cancellable change waits.
 
+![Execute a notebook with live Python output and a plotted signal.](.github/demo.png)
+
 ## Installation
 
 To install `jupyter-view` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/jupyter-view`.
