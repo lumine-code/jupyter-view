@@ -2,13 +2,19 @@
   "title": "jupyter-view",
   "description": "Execute a notebook with live Python output and a plotted signal.",
   "recordedOn": "2026-10-13",
-  "sourceRevision": "7f63c82e3ccc3a7d8c76e27d630f7c277946df05",
+  "sourceRevision": "6fd392011d75eb3edcf15f2c4ee3aa4216a429e4",
   "mode": "normal",
   "fontSettings": "default",
   "images": [
     {
       "file": "demo.png",
       "label": "Execute a notebook with live Python output and a plotted signal.",
+      "width": 1200,
+      "height": 950
+    },
+    {
+      "file": "demo-2.png",
+      "label": "Basedpyright underlines a type error inside a notebook cell and explains it in a hover.",
       "width": 1200,
       "height": 950
     }

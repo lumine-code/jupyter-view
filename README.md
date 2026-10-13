@@ -16,6 +16,8 @@ Open and edit Jupyter notebooks.
 
 ![Execute a notebook with live Python output and a plotted signal.](.github/demo.png)
 
+![Basedpyright underlines a type error inside a notebook cell and explains it in a hover.](.github/demo-2.png)
+
 ## Installation
 
 To install `jupyter-view` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/jupyter-view`.
