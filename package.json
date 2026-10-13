@@ -100,11 +100,6 @@
         "^1.0.0": "consumeAutocompleteWatchEditor"
       }
     },
-    "tree-view.selection": {
-      "versions": {
-        "^1.0.0": "consumeTreeViewSelection"
-      }
-    },
     "scrollmap.widget": {
       "versions": {
         "^1.0.0": "consumeScrollmapWidget"
@@ -153,7 +148,7 @@
       "properties": {
         "useOpener": {
           "title": "Use Workspace Opener",
-          "description": "Open .ipynb files with jupyter-view through the Lumine workspace opener.",
+          "description": "Automatically open .ipynb files in Jupyter View. Notebook viewing remains available in Open With when disabled.",
           "type": "boolean",
           "default": true
         },

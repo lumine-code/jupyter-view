@@ -22,12 +22,8 @@
               "command": "jupyter-view:new-notebook"
             },
             {
-              "label": "Open Notebook…",
-              "command": "application:open-file"
-            },
-            {
-              "label": "Open Source",
-              "command": "jupyter-view:open-source"
+              "label": "Toggle Notebook",
+              "command": "jupyter-view:toggle"
             }
           ]
         }
@@ -36,13 +32,6 @@
   ],
   "context-menu": {
     ".jupyter-notebook": [
-      {
-        "type": "separator"
-      },
-      {
-        "label": "Open Source",
-        "command": "jupyter-view:open-source"
-      },
       {
         "type": "separator"
       },
@@ -128,34 +117,6 @@
       {
         "label": "Delete Cell",
         "command": "jupyter-view:delete-cell"
-      },
-      {
-        "type": "separator"
-      }
-    ],
-    ".tree-view .file[data-name$=\".ipynb\"]": [
-      {
-        "type": "separator"
-      },
-      {
-        "label": "Open Notebook",
-        "afterGroupContaining": [
-          "graviss:open-source-on-right",
-          "markdown-preview:preview-file",
-          "image-editor:open-in-new-tab",
-          "search-panel:project-show-in-current-directory",
-          "open-external:show",
-          "tree-view:open-selected-entry-up",
-          "native-clip:paste",
-          "tree-view:paste",
-          "tree-view:remove",
-          "tree-view:add-file"
-        ],
-        "command": "jupyter-view:open-notebook"
-      },
-      {
-        "label": "Open Source",
-        "command": "jupyter-view:open-source"
       },
       {
         "type": "separator"

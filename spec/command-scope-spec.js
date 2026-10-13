@@ -28,11 +28,7 @@ function activatePackage() {
 describe("jupyter-view command scope", () => {
   let workspaceElement;
 
-  const GLOBAL_COMMANDS = [
-    "jupyter-view:new-notebook",
-    "jupyter-view:open-source",
-    "jupyter-view:toggle",
-  ];
+  const GLOBAL_COMMANDS = ["jupyter-view:new-notebook", "jupyter-view:toggle"];
 
   const ownCommandsFor = (target) =>
     lumine.commands

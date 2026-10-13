@@ -27,8 +27,7 @@ To install `jupyter-view` search for it in the Install pane of the Lumine settin
 Commands available in `lumine-workspace`:
 
 - `jupyter-view:toggle`: hide or show the active notebook, or start a new one,
-- `jupyter-view:new-notebook`: create a new notebook,
-- `jupyter-view:open-source`: open the active notebook as plain text.
+- `jupyter-view:new-notebook`: create a new notebook.
 
 Commands available in `.jupyter-notebook-container`:
 
@@ -77,10 +76,7 @@ Commands available in `.jupyter-output-container`:
 
 - `jupyter-view:copy-output-selection`: copy the selected output text to the clipboard.
 
-Commands available in `.tree-view`:
-
-- `jupyter-view:open-notebook`: open the selected `.ipynb` file as a notebook,
-- `jupyter-view:open-source`: open the selected `.ipynb` file as plain text.
+Use **Open With…** in the tree view to choose Jupyter View or Text Editor for a notebook.
 
 ## Services
 
@@ -97,7 +93,6 @@ Commands available in `.tree-view`:
 - `linter.editors`: consumed to register the backing source editor for linting, since only pane items are linted on their own, and each cell editor render-only so projected diagnostics draw inside the cells.
 - `jupyter.output`: consumed to render stored outputs with jupyter-repl's renderers; without it a notebook falls back to text and images.
 - `jupyter.execution`: consumed to execute captured notebook targets with separate acceptance and completion.
-- `tree-view.selection`: consumed to add tree-view entries for opening a selected `.ipynb` as a notebook or as plain JSON source.
 - `scrollmap.widget`: consumed to render notebook scrollmap markers in a standalone scrollbar widget.
 
 ## Integration
