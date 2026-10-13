@@ -5,7 +5,9 @@
       "submenu": [
         {
           "label": "New Jupyter Notebook",
-          "command": "jupyter-view:new-notebook"
+          "command": "jupyter-view:new-notebook",
+          "group": "new",
+          "order": 20
         }
       ]
     },
