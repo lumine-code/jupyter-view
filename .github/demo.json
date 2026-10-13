@@ -2,9 +2,10 @@
   "title": "jupyter-view",
   "description": "Execute a notebook with live Python output and a plotted signal.",
   "recordedOn": "2026-10-13",
-  "sourceRevision": "1835f400ea4859a68d56084a7a3a003d4069096c",
+  "sourceRevision": "9fd4dba32dca0c019349d5e1cbd5ec3a25d2332a",
   "mode": "normal",
   "fontSettings": "default",
+  "themeSourceRevision": "6564a9e21899b5541e9c8f8006f9be6d6d72e6ad",
   "images": [
     {
       "file": "demo.png",
