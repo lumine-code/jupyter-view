@@ -12,7 +12,7 @@ describe("jupyter-view workspace opening", () => {
   it("keeps notebook viewing available when automatic opening is disabled", async () => {
     lumine.config.set("jupyter-view.notebook.useOpener", false);
     const choice = lumine.workspace
-      .getAvailableFileOpeners("C:/project/notebook.ipynb")
+      .getAvailablePathOpeners("C:/project/notebook.ipynb")
       .find(({ id }) => id === "jupyter-view");
     expect(choice).toBeDefined();
     expect(choice.label).toBe("Jupyter View");
@@ -20,7 +20,7 @@ describe("jupyter-view workspace opening", () => {
     lumine.config.set("jupyter-view.notebook.useOpener", true);
     expect(
       lumine.workspace
-        .getAvailableFileOpeners("C:/project/notebook.ipynb")
+        .getAvailablePathOpeners("C:/project/notebook.ipynb")
         .find(({ id }) => id === "jupyter-view").isDefault,
     ).toBe(true);
   });
@@ -35,7 +35,7 @@ describe("jupyter-view workspace opening", () => {
     try {
       const notebook = await lumine.workspace.open(filePath);
       expect(notebook.constructor.name).toBe("JupyterNotebookEditor");
-      expect(lumine.workspace.getAvailableFileOpeners(filePath)[0]).toEqual(
+      expect(lumine.workspace.getAvailablePathOpeners(filePath)[0]).toEqual(
         jasmine.objectContaining({ id: "jupyter-view", isDefault: true }),
       );
       const editor = await lumine.workspace.open(filePath, { opener: "text-editor" });
