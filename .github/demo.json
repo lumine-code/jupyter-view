@@ -1,17 +1,110 @@
 {
   "title": "jupyter-view",
-  "description": "Execute a notebook with live Python output and a plotted signal.",
-  "recordedOn": "2026-10-13",
-  "sourceRevision": "9fd4dba32dca0c019349d5e1cbd5ec3a25d2332a",
+  "description": "Basedpyright underlines a type error inside a notebook cell and explains it in a hover.",
+  "recordedOn": "2026-10-14",
+  "sourceRevision": "334b2fd717c0f3b5643e112087d257110d185faf",
+  "themeSourceRevision": "7fbd047a87ecf1367c896b19ff270cdc28d319f7",
   "mode": "normal",
   "fontSettings": "default",
-  "themeSourceRevision": "6564a9e21899b5541e9c8f8006f9be6d6d72e6ad",
+  "scenario": "demo.js",
+  "recipeHash": "8f6780d63172a1bd483787f8278de79eac9eeab92b4cea31d60053e9bdefa629",
+  "environment": {
+    "platform": "win32",
+    "arch": "x64",
+    "electron": "44.7.0",
+    "chrome": "152.0.7977.130",
+    "devicePixelRatio": 1,
+    "locale": "en-GB",
+    "fontFamily": "Fira Code, Menlo, DejaVu Sans Mono, Consolas, monospace",
+    "fontSize": 14,
+    "themes": ["one-day-syntax", "one-day-ui"]
+  },
+  "viewport": { "width": 1200, "height": 950 },
+  "cornerRadius": 10,
+  "sources": {
+    "editor": {
+      "revision": "d0b1751fffac65f10a405545e5f01cf7ad05c0bb",
+      "dirty": true,
+      "workingTreeHash": "9e1925be2839d18f5d0ab44707b99041e25a1ae20ebbfbfd58e9a92724c61a7a"
+    },
+    "package": {
+      "revision": "334b2fd717c0f3b5643e112087d257110d185faf",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "jupyter-view": {
+      "revision": "334b2fd717c0f3b5643e112087d257110d185faf",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "documentation-view": {
+      "revision": "98f00040402867bdd5b046f46fb3cf31eecb17af",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "hover": {
+      "revision": "e126cdb80e5da8701b0e722be787b1cfedde9bed",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "ide": {
+      "revision": "0c1735fefa858a2834213bf6d52db91a3582b828",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "ide-basedpyright": {
+      "revision": "a5ea161f0f0a40c36c2074698470a0131497b833",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "jupyter-cells": {
+      "revision": "2f08b56b04633f28ae26a1fb0786af9e11966edc",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "jupyter-repl": {
+      "revision": "9b0bdc4667e4953c453d5dd6dca099377dfc1313",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "language-python": {
+      "revision": "0ff5b68a22a196804b0ad2451f0c05ff419cf784",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "linter": {
+      "revision": "9fc80e0296b3af2507e5ff04c7e043a813540245",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "marker": {
+      "revision": "bb4fc8fec8c9d09fe59db9b0d70352ff33cde8f8",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "one-theme": {
+      "revision": "7fbd047a87ecf1367c896b19ff270cdc28d319f7",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "fixtures": [
+    {
+      "file": "jupyter/signal.ipynb",
+      "sha256": "58628e0e15c0fb7ca069d404a3b1249722b083e584f56202f8562fe2520307ff"
+    },
+    {
+      "file": "jupyter/signal.py",
+      "sha256": "1cca25f8c327f4c05a594c0e3f410378f3869238f601e21f0a9ad58e39f07141"
+    }
+  ],
   "images": [
     {
       "file": "demo.png",
       "label": "Basedpyright underlines a type error inside a notebook cell and explains it in a hover.",
       "width": 1200,
-      "height": 950
+      "height": 950,
+      "sha256": "ad18d078c4e9f33fc355275c370b352c99f4b52c3830c42945e7b4aed0e1cf23"
     }
   ]
 }
