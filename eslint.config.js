@@ -74,7 +74,7 @@ const runtimeModules = ["lumine"];
 module.exports = [
   {
     // The local dev sandbox and spec fixtures are not linted.
-    ignores: ["node_modules/**", ".dev/**", "spec/fixtures/**"],
+    ignores: ["node_modules/**", ".dev/**", "spec/fixtures/**", "demo/**"],
   },
   js.configs.recommended,
   n.configs["flat/recommended-script"],
