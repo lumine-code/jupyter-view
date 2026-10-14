@@ -7,6 +7,7 @@ const etch = require("@lumine-code/etch");
 etch.setScheduler(lumine.views);
 const { CompositeDisposable, Disposable } = require("lumine");
 const CellView = require("./cell-view");
+const PresentationFrames = require("./presentation-frames");
 const { hasCellDrag, inspectCellDrag, readCellDrag } = require("./cell-drag");
 const { getGrammarForLanguage, getNotebookLanguage } = require("./notebook-language");
 
@@ -70,6 +71,8 @@ class NotebookView {
     this._tooltipTargets = new WeakSet();
 
     etch.initialize(this);
+    this._frames = new PresentationFrames(this.element);
+    this._frameParticipant = lumine.views.addWindowParticipant(this.element, this);
 
     // Set up focus tracking for mode switching
     this.element.addEventListener("focusin", this.handleFocusIn.bind(this));
@@ -97,7 +100,8 @@ class NotebookView {
       this._mouseButtonDown = true;
       this.activatePane();
     });
-    document.addEventListener(
+    this._inputDocument = this.element.ownerDocument;
+    this._inputDocument.addEventListener(
       "mouseup",
       (this._handleGlobalMouseUp = () => {
         this._mouseButtonDown = false;
@@ -106,6 +110,32 @@ class NotebookView {
 
     // The container only exists once the first render has run.
     this.readAfterUpdate();
+  }
+
+  requestFrame(callback) {
+    return this._frames.request(callback);
+  }
+
+  cancelFrame(frame) {
+    this._frames.cancel(frame);
+  }
+
+  prepareWindowChange() {
+    this.finishCellDrag();
+    this._mouseButtonDown = false;
+  }
+
+  didAttachToWindow() {
+    this._frames.didAttachToWindow();
+    const document = this.element.ownerDocument;
+    if (document === this._inputDocument) return;
+    this._inputDocument.removeEventListener("mouseup", this._handleGlobalMouseUp);
+    this._inputDocument = document;
+    document.addEventListener("mouseup", this._handleGlobalMouseUp);
+    this.setupCellDragAndDrop();
+    this._resizeObserver.disconnect();
+    this._resizeObserver = new document.defaultView.ResizeObserver(() => this.applyScrollPastEnd());
+    if (this.cellsContainer) this._resizeObserver.observe(this.cellsContainer);
   }
 
   // Buttons that only dispatch a command, so the toolbar can list them.
@@ -228,7 +258,7 @@ class NotebookView {
     const focusSibling = (target, toEnd) => {
       if (!editor) return;
       editor.setActiveCell(target);
-      requestAnimationFrame(() => {
+      this.requestFrame(() => {
         const view = this.cellViews.get(cellsArray[target]?.id);
         if (!view) return;
         view.focus();
@@ -241,6 +271,7 @@ class NotebookView {
 
     return {
       cell,
+      requestFrame: (callback) => this.requestFrame(callback),
       index,
       active: index === activeCellIndex,
       selected: this.selectedCells.has(index),
@@ -404,7 +435,7 @@ class NotebookView {
         // enter/over cancels it, while a slow next dragover still keeps the
         // cursor and insertion marker continuous inside the container.
         const { clientX, clientY } = event;
-        this._dragLeaveFrame = requestAnimationFrame(() => {
+        this._dragLeaveFrame = this.requestFrame(() => {
           this._dragLeaveFrame = null;
           const pointerElement = this.element.ownerDocument.elementFromPoint?.(clientX, clientY);
           if (pointerElement && this.cellsContainer.contains(pointerElement)) return;
@@ -550,7 +581,7 @@ class NotebookView {
   }
 
   cancelCellDragLeave() {
-    if (this._dragLeaveFrame != null) cancelAnimationFrame(this._dragLeaveFrame);
+    if (this._dragLeaveFrame != null) this.cancelFrame(this._dragLeaveFrame);
     this._dragLeaveFrame = null;
   }
 
@@ -630,7 +661,9 @@ class NotebookView {
   startAutoScroll() {
     if (this._autoScrollInterval) return;
 
-    this._autoScrollInterval = setInterval(() => {
+    const window = this.element.ownerDocument.defaultView;
+    this._autoScrollCancel = window.clearInterval.bind(window);
+    this._autoScrollInterval = window.setInterval(() => {
       if (this.cellsContainer && this._autoScrollSpeed !== 0) {
         this.cellsContainer.scrollTop += this._autoScrollSpeed;
       }
@@ -639,7 +672,7 @@ class NotebookView {
 
   stopAutoScroll() {
     if (this._autoScrollInterval) {
-      clearInterval(this._autoScrollInterval);
+      this._autoScrollCancel(this._autoScrollInterval);
       this._autoScrollInterval = null;
     }
     this._autoScrollSpeed = 0;
@@ -658,7 +691,7 @@ class NotebookView {
     if (scrollPastEnd) {
       // Add padding-bottom equal to the container's height minus some minimal space
       // This allows scrolling the last cell to near the top of the viewport
-      requestAnimationFrame(() => {
+      this.requestFrame(() => {
         if (this.cellsContainer) {
           const containerHeight = this.cellsContainer.clientHeight;
           // Leave at least 50px visible at the bottom
@@ -1165,12 +1198,13 @@ class NotebookView {
         container.scrollTop += this._pendingScrollY;
         this._pendingScrollY = 0;
       }
-      this._scrollAnimId = this._pendingScrollY !== 0 ? requestAnimationFrame(animate) : null;
+      this._scrollAnimId = this._pendingScrollY !== 0 ? this.requestFrame(animate) : null;
     };
-    this._scrollAnimId = requestAnimationFrame(animate);
+    this._scrollAnimId = this.requestFrame(animate);
   }
 
   destroy() {
+    this.destroyed = true;
     if (this._tooltips) {
       this._tooltips.dispose();
       this._tooltips = null;
@@ -1180,13 +1214,13 @@ class NotebookView {
     this.finishCellDrag();
 
     if (this._scrollAnimId) {
-      cancelAnimationFrame(this._scrollAnimId);
+      this.cancelFrame(this._scrollAnimId);
       this._scrollAnimId = null;
     }
 
     // Remove global mouse up listener
     if (this._handleGlobalMouseUp) {
-      document.removeEventListener("mouseup", this._handleGlobalMouseUp);
+      this._inputDocument.removeEventListener("mouseup", this._handleGlobalMouseUp);
       this._handleGlobalMouseUp = null;
     }
 
@@ -1224,6 +1258,8 @@ class NotebookView {
     }
 
     this._observedContainer = null;
+    this._frameParticipant.dispose();
+    this._frames.destroy();
     // The cell views are children of this component, so they go with it — and
     // synchronously, because each one owns a TextEditor that has to be released
     // when the notebook closes rather than on some later frame.

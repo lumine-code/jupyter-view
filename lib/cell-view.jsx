@@ -746,7 +746,10 @@ class CellView {
   focus() {
     if (this.editor && this.editorElement) {
       // Focus must happen in next frame to work reliably
-      requestAnimationFrame(() => {
+      const requestFrame =
+        this.props.requestFrame ||
+        ((callback) => this.element.ownerDocument.defaultView.requestAnimationFrame(callback));
+      requestFrame(() => {
         if (!this.editorElement) return;
 
         // preventScroll: true — scrolling is handled by scrollToCell (block: nearest)

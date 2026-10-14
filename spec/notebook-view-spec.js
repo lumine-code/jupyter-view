@@ -29,6 +29,37 @@ describe("notebook view", () => {
 
   const cellElements = () => [...view.element.querySelectorAll(".jupyter-cell")];
 
+  it("scrolls a notebook on its detached window's frames", async () => {
+    jasmine.attachToDOM(lumine.workspace.getElement());
+    view = mount([]);
+    view.element.style.height = "400px";
+    const container = view.cellsContainer;
+    Object.assign(container.style, { height: "200px", overflow: "auto" });
+    const content = document.createElement("div");
+    content.style.height = "2000px";
+    container.appendChild(content);
+    const item = { element: view.element, getTitle: () => "Notebook frames", canCopy: () => false };
+    await lumine.workspace.open(item);
+    const extra = await lumine.workspace.detachItem(item);
+    try {
+      const frames = [];
+      spyOn(extra.getDOMWindow(), "requestAnimationFrame").and.callFake((callback) =>
+        frames.push(callback),
+      );
+      spyOn(extra.getDOMWindow(), "cancelAnimationFrame");
+      const before = container.scrollTop;
+      view._smoothScrollBy(200);
+      expect(frames.length).toBe(1);
+      frames.shift()();
+      expect(container.scrollTop).toBeGreaterThan(before);
+      expect(container.scrollTop).toBeLessThan(before + 200);
+    } finally {
+      view.destroy();
+      view = null;
+      await lumine.workspace.discardEditorWindows();
+    }
+  });
+
   it("renders one cell per notebook cell, in order", () => {
     view = mount([cell("a"), cell("b"), cell("c")]);
 
