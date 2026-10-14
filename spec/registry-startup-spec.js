@@ -34,3 +34,53 @@ describe("the notebook document registry bootstrap", () => {
     expect(requested).toEqual(["lumine"]);
   });
 });
+
+describe("the notebook execution service bootstrap", () => {
+  let service, requested, Editor, ExecutionAdapter;
+
+  beforeEach(() => {
+    Editor = class JupyterNotebookEditor {
+      getCellEditor() {}
+    };
+    ExecutionAdapter = class {
+      constructor(editor) {
+        this.editor = editor;
+      }
+    };
+    requested = [];
+    const isolatedModule = { exports: {} };
+    vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../lib/jupyter-adapter.js"), "utf8"), {
+      module: isolatedModule,
+      lumine: { workspace: { getCenter: () => ({ getActivePaneItem: () => null }) } },
+      require: (request) => {
+        requested.push(request);
+        if (request === "./jupyter-notebook-editor") return Editor;
+        if (request === "./notebook-execution-adapter") return ExecutionAdapter;
+        throw new Error(`Unexpected module: ${request}`);
+      },
+    });
+    service = new isolatedModule.exports();
+  });
+
+  it("rejects ordinary items without loading notebook models or execution", () => {
+    expect(service.handlesItem(null)).toBe(false);
+    expect(service.handlesItem({ getBuffer() {} })).toBe(false);
+    expect(service.getAdapterForItem({ getPath: () => "/source.py" })).toBeNull();
+    expect(service.getActiveAdapter()).toBeNull();
+    expect(requested).toEqual([]);
+  });
+
+  it("keeps notebook and subclass handling synchronous", () => {
+    const notebook = new Editor();
+    const Split = class extends Editor {};
+    const split = new Split();
+    expect(service.handlesItem(notebook)).toBe(true);
+    expect(requested).toEqual([]);
+    expect(service.handlesItem(split)).toBe(true);
+    expect(requested).toEqual(["./jupyter-notebook-editor"]);
+    const adapter = service.getAdapterForItem(notebook);
+    expect(adapter).toBeInstanceOf(ExecutionAdapter);
+    expect(adapter.editor).toBe(notebook);
+    expect(requested).toEqual(["./jupyter-notebook-editor", "./notebook-execution-adapter"]);
+  });
+});
