@@ -4,6 +4,7 @@
  */
 
 const etch = require("@lumine-code/etch");
+etch.setScheduler(lumine.views);
 const { CompositeDisposable, Disposable } = require("lumine");
 const CellView = require("./cell-view");
 const { hasCellDrag, inspectCellDrag, readCellDrag } = require("./cell-drag");
