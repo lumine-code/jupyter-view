@@ -4,7 +4,10 @@ const { Emitter } = require("lumine");
 const packagePath = path.join(__dirname, "..");
 function isLoaded(name) {
   return Object.values(require.cache).some(
-    (entry) => entry.filename.startsWith(packagePath) && entry.filename.endsWith(name),
+    (entry) =>
+      typeof entry?.filename === "string" &&
+      entry.filename.startsWith(packagePath) &&
+      entry.filename.endsWith(name),
   );
 }
 
