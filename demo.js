@@ -66,6 +66,13 @@ module.exports = {
           state.document = await lumine.workspace.open(fixture("jupyter/signal.ipynb"));
           lumine.commands.dispatch(lumine.views.getView(state.document), "jupyter-view:run-all");
           await waitFor(() => document.body.innerText.includes("Average: 0.42"), "step 2", 60000);
+          await waitFor(
+            () =>
+              document.querySelector(".jupyter-notebook img")?.naturalWidth > 0 &&
+              !document.querySelector(".jupyter-notebook .jupyter-cell.running"),
+            "completed notebook plot",
+            90000,
+          );
         }
         {
           for (let n = 0; n < 50; n++) {
@@ -84,6 +91,8 @@ module.exports = {
           }
           state.cell = state.document.getCellEditorById("analysis");
           if (!state.cell) throw new Error("Missing live notebook cell editor");
+          state.document.setActiveCell(1);
+          state.cell.setCursorBufferPosition([3, 21]);
         }
       },
       async afterPointerMove(context) {
@@ -96,7 +105,9 @@ module.exports = {
       ready() {
         return Boolean(
           document.querySelector("lumine-overlay.hover-overlay")?.innerText.includes("float") &&
-          document.body.innerText.includes("Average: 0.42"),
+          document.body.innerText.includes("Average: 0.42") &&
+          document.querySelector(".jupyter-notebook img")?.naturalWidth > 0 &&
+          !document.querySelector(".jupyter-notebook .jupyter-cell.running"),
         );
       },
     },
