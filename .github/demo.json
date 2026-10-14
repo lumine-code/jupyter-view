@@ -9,12 +9,6 @@
   "images": [
     {
       "file": "demo.png",
-      "label": "Execute a notebook with live Python output and a plotted signal.",
-      "width": 1200,
-      "height": 950
-    },
-    {
-      "file": "demo-2.png",
       "label": "Basedpyright underlines a type error inside a notebook cell and explains it in a hover.",
       "width": 1200,
       "height": 950
