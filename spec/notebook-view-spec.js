@@ -29,6 +29,35 @@ describe("notebook view", () => {
 
   const cellElements = () => [...view.element.querySelectorAll(".jupyter-cell")];
 
+  it("checks focus in its detached document after a deferred focus-out", async () => {
+    jasmine.attachToDOM(lumine.workspace.getElement());
+    view = mount([cell("focus")]);
+    const item = { element: view.element, getTitle: () => "Notebook focus", canCopy: () => false };
+    await lumine.workspace.open(item);
+    const extra = await lumine.workspace.detachItem(item);
+    try {
+      const editor = view.cellViews.get("focus").editorElement;
+      editor.focus();
+      view.setMode("edit");
+      view._skipFocusModeChange = view._mouseButtonDown = false;
+      const hide = spyOn(view, "_hideSelectionClasses");
+      const frames = [];
+      spyOn(extra.getDOMWindow(), "requestAnimationFrame").and.callFake((callback) =>
+        frames.push(callback),
+      );
+      spyOn(extra.getDOMWindow(), "cancelAnimationFrame");
+      view.handleFocusOut();
+      expect(frames.length).toBe(1);
+      frames[0]();
+      expect(hide).not.toHaveBeenCalled();
+      expect(view.getMode()).toBe("edit");
+    } finally {
+      view.destroy();
+      view = null;
+      await lumine.workspace.discardEditorWindows();
+    }
+  });
+
   it("scrolls a notebook on its detached window's frames", async () => {
     jasmine.attachToDOM(lumine.workspace.getElement());
     view = mount([]);

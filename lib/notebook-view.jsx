@@ -8,6 +8,7 @@ etch.setScheduler(lumine.views);
 const { CompositeDisposable, Disposable } = require("lumine");
 const CellView = require("./cell-view");
 const PresentationFrames = require("./presentation-frames");
+const { setTimeout: scheduleFocusReset, clearTimeout: cancelFocusReset } = require("node:timers");
 const { hasCellDrag, inspectCellDrag, readCellDrag } = require("./cell-drag");
 const { getGrammarForLanguage, getNotebookLanguage } = require("./notebook-language");
 
@@ -790,8 +791,10 @@ class NotebookView {
         this._skipFocusModeChange = true;
         cellView.focus();
         // Re-enable after focus events have been processed
-        // Use setTimeout to ensure it runs after handleFocusOut's setTimeout(0)
-        setTimeout(() => {
+        // Keep the focus guard through the deferred focus-out check.
+        cancelFocusReset(this._focusResetTimer);
+        this._focusResetTimer = scheduleFocusReset(() => {
+          this._focusResetTimer = null;
           this._skipFocusModeChange = false;
         }, 50);
       }
@@ -837,14 +840,15 @@ class NotebookView {
 
   handleFocusOut() {
     // Check if focus is leaving the notebook entirely
-    setTimeout(() => {
+    this.requestFrame(() => {
       // Guard against destroyed view
-      if (!this.element) return;
+      if (this.destroyed || !this.element) return;
 
       // Don't switch mode if programmatically focusing or mouse button held
       if (this._skipFocusModeChange) return;
       if (this._mouseButtonDown) return;
 
+      const document = this.element.ownerDocument;
       if (!this.element.contains(document.activeElement)) {
         // Focus left the notebook - hide selections
         this._hideSelectionClasses();
@@ -852,7 +856,7 @@ class NotebookView {
         // Focus is in notebook but not in an editor
         this.setMode("command");
       }
-    }, 0);
+    });
   }
 
   handleClick(event) {
@@ -1205,6 +1209,7 @@ class NotebookView {
 
   destroy() {
     this.destroyed = true;
+    cancelFocusReset(this._focusResetTimer);
     if (this._tooltips) {
       this._tooltips.dispose();
       this._tooltips = null;

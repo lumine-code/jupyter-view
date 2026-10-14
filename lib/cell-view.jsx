@@ -747,8 +747,7 @@ class CellView {
     if (this.editor && this.editorElement) {
       // Focus must happen in next frame to work reliably
       const requestFrame =
-        this.props.requestFrame ||
-        ((callback) => this.element.ownerDocument.defaultView.requestAnimationFrame(callback));
+        this.props.requestFrame || ((callback) => lumine.views.updateDocument(callback));
       requestFrame(() => {
         if (!this.editorElement) return;
 
@@ -761,7 +760,7 @@ class CellView {
           const model = editorView.getModel();
           if (model) {
             // This triggers the cursor to appear
-            lumine.views.getView(lumine.workspace).focus();
+            this.element.closest("lumine-workspace")?.focus();
             this.editorElement.focus({ preventScroll: true });
           }
         }
