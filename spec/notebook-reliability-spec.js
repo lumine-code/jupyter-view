@@ -63,7 +63,14 @@ describe("notebook persistence and ownership", () => {
     for (const registry of registries) registry.destroy();
     for (const document of documents) document.destroy();
     await lumine.fileWatchClient.settlePendingTeardown();
-    fs.rmSync(directory, { recursive: true, force: true });
+    // Native watcher teardown is already settled above. Windows can still hold
+    // directory entries briefly while antivirus or indexing releases the file.
+    await fs.promises.rm(directory, {
+      recursive: true,
+      force: true,
+      maxRetries: 5,
+      retryDelay: 100,
+    });
   });
 
   async function documentFor(data = notebook(), fileName = "notebook.ipynb") {
