@@ -47,12 +47,12 @@
     "alt-pageup": "jupyter-view:scroll-up",
     "alt-pagedown": "jupyter-view:scroll-down",
 
-    "ctrl-shift-up": "jupyter-view:move-cell-up",
-    "ctrl-shift-down": "jupyter-view:move-cell-down",
+    "cmdorctrl-shift-up": "jupyter-view:move-cell-up",
+    "cmdorctrl-shift-down": "jupyter-view:move-cell-down",
 
     "shift-m": "jupyter-view:merge-cell-below",
 
-    "ctrl-shift-d": "jupyter-view:duplicate-cell"
+    "cmdorctrl-shift-d": "jupyter-view:duplicate-cell"
   },
 
   ".jupyter-notebook.edit-mode lumine-text-editor": {
@@ -72,8 +72,8 @@
   ".jupyter-notebook": {
     "ctrl-enter": "jupyter-view:run-cell",
     "shift-enter": "jupyter-view:run-cell-and-move-down",
-    "ctrl-s": "jupyter-view:save",
-    "ctrl-shift-s": "jupyter-view:save-as",
+    "cmdorctrl-s": "jupyter-view:save",
+    "cmdorctrl-shift-s": "jupyter-view:save-as",
 
     // Core already binds cmdorctrl-k <direction> for these at body. Spelling
     // them ctrl-k here duplicated that off macOS and, on macOS, turned the
