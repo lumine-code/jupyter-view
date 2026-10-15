@@ -20,8 +20,7 @@ describe("jupyter-view package assets", () => {
     // JSON.parse alone is the wrong reader.
     const keymap = JSON.parse(read("keymaps/main.json").replace(/^\s*\/\/.*$/gm, ""));
     expect(keymap[".jupyter-notebook"]).toBeDefined();
-    // alt-j is the Jupyter family's chord prefix. ctrl-shift-n is core's
-    // application:new-window and this binding, being deeper, took it.
+    // alt-j n creates a notebook while leaving global New… (launcher:new) available.
     expect(keymap["lumine-workspace"]["alt-j n"]).toBe("jupyter-view:new-notebook");
     // The run bindings are this package's own commands, which route through
     // jupyter-repl's execution service and its adapter integration.

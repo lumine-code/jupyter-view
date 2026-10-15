@@ -1,8 +1,6 @@
 {
-  // `alt-j` is the Jupyter family's chord prefix. ctrl-shift-n is core's
-  // application:new-window, bound at body; this sits at lumine-workspace, which
-  // is deeper, and DOM proximity outranks everything — so it took the keystroke
-  // and there was no way to open a new window while this package was active.
+  // `alt-j` is the Jupyter family's chord prefix. `alt-j n` creates a notebook
+  // while leaving the global New… command (`launcher:new`) available.
   "lumine-workspace": {
     "alt-j n": "jupyter-view:new-notebook"
   },
