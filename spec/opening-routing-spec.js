@@ -26,7 +26,7 @@ describe("jupyter-view workspace opening", () => {
   });
 
   it("opens notebooks by default and keeps an explicitly chosen source editor separate", async () => {
-    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "jupyter-open-with-"));
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "jupyter-launcher-"));
     const filePath = path.join(directory, "notebook.ipynb");
     fs.writeFileSync(
       filePath,

@@ -74,10 +74,11 @@ Commands available in `.jupyter-output-container`:
 
 - `jupyter-view:copy-output-selection`: copy the selected output text to the clipboard.
 
-Use **Open With…** in the tree view to choose Jupyter View or Text Editor for a notebook.
+Use **Open…** in the tree view to choose Jupyter View or Text Editor for a notebook, or **New…** to create a notebook in the workspace center.
 
 ## Services
 
+- `launcher.provider`: provided to create new notebook items through Launcher.
 - `background-tips.provider`: provided to explain notebook editing in an empty workspace.
 - `mcp.tools`: provided to expose live notebook reads, cell operations, save/open/create and bounded change waits to connected MCP clients.
 - `jupyter.adapter`: provided to describe notebook targets and route session results back into the dispatched notebook.

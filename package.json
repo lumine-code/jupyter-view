@@ -48,6 +48,11 @@
     "JupyterNotebookEditor": "deserializeNotebookEditor"
   },
   "providedServices": {
+    "launcher.provider": {
+      "versions": {
+        "1.0.0": "provideLauncher"
+      }
+    },
     "mcp.tools": {
       "versions": {
         "1.0.0": "provideMcpTools"
@@ -148,7 +153,7 @@
       "properties": {
         "useOpener": {
           "title": "Use Workspace Opener",
-          "description": "Automatically open .ipynb files in Jupyter View. Notebook viewing remains available in Open With when disabled.",
+          "description": "Automatically open .ipynb files in Jupyter View. Notebook viewing remains available through Launcher when disabled.",
           "type": "boolean",
           "default": true
         },
