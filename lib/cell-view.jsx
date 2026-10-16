@@ -390,6 +390,9 @@ class CellView {
       if (!this._updatingFromExternal && this._localChangeSourceRevision === null) {
         this._localChangeSourceRevision = this.props.cellSourceRevision || 0;
       }
+      if (!this._updatingFromExternal) {
+        this.setPendingSourceChange(this.editor.getText() !== (this.props.cell?.source || ""));
+      }
     });
 
     this.editorSubscription = this.editor.onDidStopChanging(() => {
@@ -398,6 +401,7 @@ class CellView {
         this._updatingFromExternal = false;
         this._editorIsDirty = false;
         this._localChangeSourceRevision = null;
+        this.setPendingSourceChange(false);
         return;
       }
       const source = this.editor.getText();
@@ -421,6 +425,7 @@ class CellView {
       if (sourceChanged && this.props.onSourceChange) {
         this.props.onSourceChange(source);
       }
+      this.setPendingSourceChange(false);
     });
 
     // Handle click on editor to enter edit mode and focus
@@ -686,6 +691,11 @@ class CellView {
     this._lastKnownSource = source;
     this._editorIsDirty = false;
     this._localChangeSourceRevision = null;
+    this.setPendingSourceChange(false);
+  }
+
+  setPendingSourceChange(pending) {
+    this.props.editor?.document?.setPendingCellSourceChange?.(this, pending);
   }
 
   update(props) {
@@ -824,6 +834,7 @@ class CellView {
     this._magicPrefix?.destroy();
     this._magicPrefix = null;
     this.editorElement = null;
+    this.setPendingSourceChange(false);
     if (hadEditor) {
       this.props.editor?.notifyCellEditorChange?.(this.props.cell.id, null);
     }

@@ -24,16 +24,30 @@ describe("jupyter-view Launcher provider", () => {
     const first = await provider.create({ pane });
     const second = await provider.create({ pane });
     items.push(first, second);
+    await Promise.all([first._sourceEditorSetupPromise, second._sourceEditorSetupPromise]);
 
     expect(first.constructor.name).toBe("JupyterNotebookEditor");
     expect(first._destroyed).toBe(false);
     expect(first.getPath()).toBeFalsy();
     expect(first.document).not.toBe(second.document);
+    expect(first.getFileState()).toBe("unmodified");
+    expect(second.getFileState()).toBe("unmodified");
     expect(main.notebookEditors.has(first)).toBe(true);
     expect(lumine.workspace.paneForItem(first)).toBeFalsy();
     expect(lumine.workspace.paneForItem(second)).toBeFalsy();
     expect(pane.getActiveItem()).toBe(activeItem);
     expect(open).not.toHaveBeenCalled();
+  });
+
+  it("opens a clean notebook through the package command", async () => {
+    const editor = await main.newNotebook();
+    items.push(editor);
+    await editor._sourceEditorSetupPromise;
+
+    expect(lumine.workspace.getActivePaneItem()).toBe(editor);
+    expect(editor.getFileState()).toBe("unmodified");
+    expect(editor.document.isModified()).toBe(false);
+    expect(editor.shouldPromptToSave({ lastView: true })).toBe(false);
   });
 
   it("shares notebook creation with the package command", async () => {

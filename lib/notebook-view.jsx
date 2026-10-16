@@ -756,6 +756,7 @@ class NotebookView {
 
   setMode(mode) {
     if (this.mode !== mode) {
+      this.props.editor?.flushPendingCellSourceChanges?.();
       this.mode = mode;
 
       // The classes, the indicator and the cells all read the mode, and the
