@@ -49,15 +49,18 @@ describe("the notebook execution service bootstrap", () => {
     };
     requested = [];
     const isolatedModule = { exports: {} };
+    const isolatedRequire = (request) => {
+      requested.push(request);
+      if (request === "./jupyter-notebook-editor") return Editor;
+      if (request === "./notebook-execution-adapter") return ExecutionAdapter;
+      throw new Error(`Unexpected module: ${request}`);
+    };
+    isolatedRequire.resolve = (request) => request;
+    isolatedRequire.cache = { "./jupyter-notebook-editor": { exports: Editor } };
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../lib/jupyter-adapter.js"), "utf8"), {
       module: isolatedModule,
       lumine: { workspace: { getCenter: () => ({ getActivePaneItem: () => null }) } },
-      require: (request) => {
-        requested.push(request);
-        if (request === "./jupyter-notebook-editor") return Editor;
-        if (request === "./notebook-execution-adapter") return ExecutionAdapter;
-        throw new Error(`Unexpected module: ${request}`);
-      },
+      require: isolatedRequire,
     });
     service = new isolatedModule.exports();
   });
@@ -65,6 +68,7 @@ describe("the notebook execution service bootstrap", () => {
   it("rejects ordinary items without loading notebook models or execution", () => {
     expect(service.handlesItem(null)).toBe(false);
     expect(service.handlesItem({ getBuffer() {} })).toBe(false);
+    expect(service.handlesItem({ getCellEditor() {} })).toBe(false);
     expect(service.getAdapterForItem({ getPath: () => "/source.py" })).toBeNull();
     expect(service.getActiveAdapter()).toBeNull();
     expect(requested).toEqual([]);
@@ -77,10 +81,10 @@ describe("the notebook execution service bootstrap", () => {
     expect(service.handlesItem(notebook)).toBe(true);
     expect(requested).toEqual([]);
     expect(service.handlesItem(split)).toBe(true);
-    expect(requested).toEqual(["./jupyter-notebook-editor"]);
+    expect(requested).toEqual([]);
     const adapter = service.getAdapterForItem(notebook);
     expect(adapter).toBeInstanceOf(ExecutionAdapter);
     expect(adapter.editor).toBe(notebook);
-    expect(requested).toEqual(["./jupyter-notebook-editor", "./notebook-execution-adapter"]);
+    expect(requested).toEqual(["./notebook-execution-adapter"]);
   });
 });
