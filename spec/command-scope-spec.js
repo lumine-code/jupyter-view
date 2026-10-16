@@ -179,7 +179,9 @@ describe("jupyter-view notebook resolution", () => {
   it("describes search replacement without constructing an adapter or inspecting cell source", () => {
     const service = main.provideSearchAdapter();
     const before = dispatched._searchAdapter;
-    const source = spyOn(dispatched.getSourceEditor(), "getText").and.throwError("Unexpected source read");
+    const source = spyOn(dispatched.getSourceEditor(), "getText").and.throwError(
+      "Unexpected source read",
+    );
     expect(service.handlesItem(dispatched)).toBe(true);
     expect(service.canReplaceItem(dispatched)).toBe(true);
     expect(dispatched._searchAdapter).toBe(before);
