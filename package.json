@@ -20,6 +20,7 @@
     "lumine": "^1.0.0"
   },
   "specPackages": [
+    "grammar-selector",
     "language-gfm",
     "language-html",
     "language-ipython",

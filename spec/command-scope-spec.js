@@ -141,26 +141,50 @@ describe("jupyter-view notebook resolution", () => {
     expect(active.document.getCellCount()).toBe(before);
   });
 
-  it("stops cell grammar selection in command mode but lets edit mode reach it", () => {
-    const grammarHandler = jasmine.createSpy("grammar handler");
-    const disposable = lumine.commands.add(
-      "lumine-workspace",
-      "grammar-selector:show",
-      grammarHandler,
-    );
+  it("lets the grammar owner decline a dormant cell and accept an editing cell", async () => {
+    await lumine.packages.activatePackage("grammar-selector");
+    const pane = lumine.workspace.getCenter().getActivePane();
+    pane.activateItem(dispatched);
     const cellElement = lumine.views.getView(dispatched.getCellEditor(1));
 
     try {
       expect(dispatched.view.getMode()).toBe("command");
-      lumine.commands.dispatch(cellElement, "grammar-selector:show");
-      expect(grammarHandler).not.toHaveBeenCalled();
+      expect(lumine.commands.canDispatch(cellElement, "grammar-selector:show")).toBe(false);
+      expect(await lumine.commands.dispatch(cellElement, "grammar-selector:show")).toBeNull();
 
       dispatched.view.setMode("edit");
-      lumine.commands.dispatch(cellElement, "grammar-selector:show");
-      expect(grammarHandler).toHaveBeenCalledTimes(1);
+      expect(lumine.commands.canDispatch(cellElement, "grammar-selector:show")).toBe(true);
     } finally {
-      disposable.dispose();
+      await lumine.packages.deactivatePackage("grammar-selector");
     }
+  });
+
+  it("enables cell paste only for the notebook owning a copied cell", () => {
+    const target = dispatched._containerElement;
+    expect(lumine.commands.canDispatch(target, "jupyter-view:paste-cell-below")).toBe(false);
+    const changed = jasmine.createSpy("clipboard changed");
+    const lease = lumine.commands.onDidChange(changed);
+    try {
+      dispatched.copyCell();
+      expect(changed).toHaveBeenCalled();
+      expect(lumine.commands.canDispatch(target, "jupyter-view:paste-cell-below")).toBe(true);
+      expect(
+        lumine.commands.canDispatch(active._containerElement, "jupyter-view:paste-cell-below"),
+      ).toBe(false);
+    } finally {
+      lease.dispose();
+    }
+  });
+
+  it("describes search replacement without constructing an adapter or inspecting cell source", () => {
+    const service = main.provideSearchAdapter();
+    const before = dispatched._searchAdapter;
+    const source = spyOn(dispatched.getSourceEditor(), "getText").and.throwError("Unexpected source read");
+    expect(service.handlesItem(dispatched)).toBe(true);
+    expect(service.canReplaceItem(dispatched)).toBe(true);
+    expect(dispatched._searchAdapter).toBe(before);
+    expect(source).not.toHaveBeenCalled();
+    expect(service.canReplaceItem({})).toBe(false);
   });
 
   it("falls back to the active notebook when nothing names one", () => {
