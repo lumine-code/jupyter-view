@@ -22,7 +22,8 @@ describe("package restoration lifecycle", () => {
       main.documentRegistry = null;
       main.notebookEditors = new Set();
       main.notebookScrollmaps = new Map();
-      main.initialize(packageState);
+      main.initialize();
+      main.restoreSessionState(packageState);
 
       editor = main.deserializeNotebookEditor({
         documentId,
@@ -85,7 +86,8 @@ describe("package restoration lifecycle", () => {
       main.documentRegistry = null;
       main.notebookEditors = new Set();
       main.notebookScrollmaps = new Map();
-      main.initialize(packageState);
+      main.initialize();
+      main.restoreSessionState(packageState);
 
       const opened = [];
       serviceDisposable = main.consumeIde({

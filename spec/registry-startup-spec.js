@@ -3,6 +3,22 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 describe("the notebook document registry bootstrap", () => {
+  it("hydrates recovery records without replacing a live document or its registry", async () => {
+    const Registry = require("../lib/notebook-document-registry");
+    const registry = new Registry();
+    try {
+      const document = await registry.createUntitledDocument();
+      document.updateCellSource(0, "unsaved = 1");
+      const state = registry.serialize();
+      registry.restoreSessionState(state);
+      expect(await registry.getOrCreateDocumentById(document.id)).toBe(document);
+      expect(document.getCell(0).source).toBe("unsaved = 1");
+      expect(document.isModified()).toBe(true);
+    } finally {
+      registry.destroy();
+    }
+  });
+
   it("keeps document models and views unloaded until a notebook is requested", async () => {
     const filename = path.join(__dirname, "../lib/notebook-document-registry.js");
     const isolatedModule = { exports: {} };
