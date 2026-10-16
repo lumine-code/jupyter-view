@@ -182,4 +182,47 @@ describe("jupyter-view notebook resolution", () => {
     expect(active.document.getCellCount()).toBe(before);
     expect(dispatched.document.getCellCount()).toBe(dispatchedBefore);
   });
+
+  function cellTarget(index) {
+    const target = document.createElement("div");
+    target.className = "jupyter-cell";
+    target.dataset.cellId = dispatched.document.getCell(index).id;
+    dispatched._containerElement.appendChild(target);
+    return target;
+  }
+
+  it("deletes the context cell instead of a different active cell", () => {
+    const first = dispatched.document.getCell(0);
+    const second = dispatched.document.insertCell(1);
+    dispatched.setActiveCell(0);
+    dispatched.view.replaceSelection([0]);
+
+    lumine.commands.dispatch(cellTarget(1), "jupyter-view:delete-cell");
+
+    expect(dispatched.document.getCellIndexById(first.id)).toBe(0);
+    expect(dispatched.document.getCellIndexById(second.id)).toBe(-1);
+  });
+
+  it("clears output on the clicked cell and preserves a selected group containing it", () => {
+    dispatched.document.insertCell(1);
+    dispatched.setActiveCell(0);
+    dispatched.view.replaceSelection([0, 1]);
+    const clear = spyOn(dispatched.document, "clearCellOutput");
+
+    lumine.commands.dispatch(cellTarget(1), "jupyter-view:clear-output");
+
+    expect(clear).toHaveBeenCalledWith(1);
+    expect(dispatched.view.getSelectedCells()).toEqual([0, 1]);
+  });
+
+  it("does not redirect a stale cell target to the active cell", () => {
+    const second = dispatched.document.insertCell(1);
+    const target = cellTarget(1);
+    dispatched.document.deleteCell(dispatched.document.getCellIndexById(second.id));
+    const clear = spyOn(dispatched.document, "clearCellOutput");
+
+    lumine.commands.dispatch(target, "jupyter-view:clear-output");
+
+    expect(clear).not.toHaveBeenCalled();
+  });
 });
