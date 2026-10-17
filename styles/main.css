@@ -230,11 +230,11 @@
       transition: none;
 
       .execution-count {
-        color: rgb(from var(--text-color-warning) r g b / 0.8);
+        color: var(--text-color-warning);
       }
 
       .cell-timer {
-        color: rgb(from var(--text-color-warning) r g b / 0.8);
+        color: var(--text-color-warning);
       }
     }
 
@@ -296,13 +296,13 @@
 
     .cell-number {
       font-family: var(--ui-font-family);
-      color: rgb(from var(--text-color) r g b / 0.25);
+      color: var(--text-color-subtle);
       font-size: 0.75em;
     }
 
     .execution-count {
       font-family: var(--ui-font-family);
-      color: rgb(from var(--text-color) r g b / 0.25);
+      color: var(--text-color-subtle);
       font-size: 0.75em;
     }
 
@@ -314,7 +314,7 @@
     .cell-timer {
       font-size: 0.75em;
       font-family: var(--ui-font-family);
-      color: rgb(from var(--text-color) r g b / 0.25);
+      color: var(--text-color-subtle);
       text-align: right;
       white-space: nowrap;
       min-height: 1em;
@@ -562,7 +562,7 @@
       }
 
       &.output-latex-loading {
-        color: rgb(from var(--text-color) r g b / 0.5);
+        color: var(--text-color-subtle);
       }
 
       &.output-latex-error code {
@@ -635,80 +635,80 @@
 
     /* Standard foreground colors (Anser uses -fg suffix) */
     .ansi-black-fg {
-      color: #000000;
+      color: var(--terminal-color-black);
     }
     .ansi-red-fg {
-      color: #cd3131;
+      color: var(--terminal-color-red);
     }
     .ansi-green-fg {
-      color: #0dbc79;
+      color: var(--terminal-color-green);
     }
     .ansi-yellow-fg {
-      color: #e5e510;
+      color: var(--terminal-color-yellow);
     }
     .ansi-blue-fg {
-      color: #2472c8;
+      color: var(--terminal-color-blue);
     }
     .ansi-magenta-fg {
-      color: #bc3fbc;
+      color: var(--terminal-color-magenta);
     }
     .ansi-cyan-fg {
-      color: #11a8cd;
+      color: var(--terminal-color-cyan);
     }
     .ansi-white-fg {
-      color: #e5e5e5;
+      color: var(--terminal-color-white);
     }
 
     /* Bright foreground colors */
     .ansi-bright-black-fg {
-      color: #666666;
+      color: var(--terminal-color-bright-black);
     }
     .ansi-bright-red-fg {
-      color: #f14c4c;
+      color: var(--terminal-color-bright-red);
     }
     .ansi-bright-green-fg {
-      color: #23d18b;
+      color: var(--terminal-color-bright-green);
     }
     .ansi-bright-yellow-fg {
-      color: #f5f543;
+      color: var(--terminal-color-bright-yellow);
     }
     .ansi-bright-blue-fg {
-      color: #3b8eea;
+      color: var(--terminal-color-bright-blue);
     }
     .ansi-bright-magenta-fg {
-      color: #d670d6;
+      color: var(--terminal-color-bright-magenta);
     }
     .ansi-bright-cyan-fg {
-      color: #29b8db;
+      color: var(--terminal-color-bright-cyan);
     }
     .ansi-bright-white-fg {
-      color: #ffffff;
+      color: var(--terminal-color-bright-white);
     }
 
     /* Background colors (Anser uses -bg suffix) */
     .ansi-black-bg {
-      background-color: #000000;
+      background-color: var(--terminal-color-black);
     }
     .ansi-red-bg {
-      background-color: #cd3131;
+      background-color: var(--terminal-color-red);
     }
     .ansi-green-bg {
-      background-color: #0dbc79;
+      background-color: var(--terminal-color-green);
     }
     .ansi-yellow-bg {
-      background-color: #e5e510;
+      background-color: var(--terminal-color-yellow);
     }
     .ansi-blue-bg {
-      background-color: #2472c8;
+      background-color: var(--terminal-color-blue);
     }
     .ansi-magenta-bg {
-      background-color: #bc3fbc;
+      background-color: var(--terminal-color-magenta);
     }
     .ansi-cyan-bg {
-      background-color: #11a8cd;
+      background-color: var(--terminal-color-cyan);
     }
     .ansi-white-bg {
-      background-color: #e5e5e5;
+      background-color: var(--terminal-color-white);
     }
   }
 
@@ -786,26 +786,15 @@
   }
 }
 
-/* Dark theme adjustments */
-.theme-one-dark-ui,
-.theme-atom-dark-ui {
-  .jupyter-view .jupyter-notebook {
-    .cell-output {
-      background-color: rgb(0 0 0 / 0.2);
-    }
+/* Respect reduced motion while retaining visible status indicators. */
+@media (prefers-reduced-motion: reduce) {
+  .jupyter-view .jupyter-cell {
+    transition: none;
   }
-}
-
-/* Light theme adjustments */
-.theme-one-light-ui,
-.theme-atom-light-ui {
-  .jupyter-view .jupyter-notebook {
-    .cell-gutter {
-      background-color: rgb(0 0 0 / 0.03);
-    }
-
-    .cell-output {
-      background-color: rgb(0 0 0 / 0.02);
-    }
+  .jupyter-view .jupyter-cell.running,
+  .jupyter-view .cell-gutter.running::before,
+  .jupyter-view .jupyter-outputs .ansi-blink,
+  .jupyter-view .jupyter-notebook-loading .loading-spinner-large {
+    animation: none;
   }
 }

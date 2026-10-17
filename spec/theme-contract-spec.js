@@ -1,6 +1,26 @@
 const path = require("path");
 
 describe("notebook surface theme ownership", () => {
+  it("keeps execution details readable and follows terminal palette overrides", () => {
+    const stylesheet = lumine.themes.requireStylesheet(
+      path.join(__dirname, "..", "styles", "main.css"),
+    );
+    const host = document.createElement("div");
+    host.className = "jupyter-view";
+    host.style.cssText =
+      "--text-color-subtle: rgb(90,100,110); --terminal-color-red: rgb(120,30,40);";
+    host.innerHTML =
+      '<div class="cell-gutter"><span class="cell-number">1</span><span class="execution-count">2</span><span class="cell-timer">3s</span></div><div class="jupyter-outputs"><span class="ansi-red-fg">Error</span></div>';
+    jasmine.attachToDOM(host);
+    try {
+      for (const label of host.querySelector(".cell-gutter").children)
+        expect(getComputedStyle(label).color).toBe("rgb(90, 100, 110)");
+      expect(getComputedStyle(host.querySelector(".ansi-red-fg")).color).toBe("rgb(120, 30, 40)");
+    } finally {
+      host.remove();
+      stylesheet.dispose();
+    }
+  });
   it("keeps cell content readable with independent UI and syntax palettes", () => {
     const stylesheet = lumine.themes.requireStylesheet(
       path.join(__dirname, "..", "styles", "main.css"),
