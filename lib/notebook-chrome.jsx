@@ -9,6 +9,8 @@
  */
 
 const etch = require("@lumine-code/etch");
+// Loading and error chrome can render before the full notebook view is loaded.
+etch.setScheduler(lumine.views);
 
 class NotebookChrome {
   constructor(props = {}) {
