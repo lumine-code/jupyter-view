@@ -142,6 +142,7 @@ jobs:
         run: |
           ln -s "$GITHUB_WORKSPACE/jupyter-view/node_modules" "$GITHUB_WORKSPACE/jupyter-view-original/node_modules"
           cp ../jupyter-view/spec/native-path-ownership-spec.js ../jupyter-view-original/spec/
+          cp ../jupyter-view/diagnostics/posix-file-ownership-spec.js ../jupyter-view-original/diagnostics/
           # Adapt only the pinned control's cold lifecycle to current Core.
           # Its original notebook/document/path code stays byte-for-byte intact.
           node ../jupyter-view/script/prepare-native-control.js ../jupyter-view-original

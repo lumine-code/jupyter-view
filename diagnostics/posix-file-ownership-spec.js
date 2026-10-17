@@ -4,7 +4,7 @@ const path = require("node:path");
 
 if (process.platform === "linux")
   describe("native POSIX file ownership", () => {
-    let main, directory, editors, ImageNavigator;
+    let main, directory, editors, ImageNavigator, navigators;
 
     beforeEach(async () => {
       for (const method of ["openExternal", "openPath", "showItemInFolder", "openApplication"])
@@ -21,10 +21,12 @@ if (process.platform === "linux")
       ImageNavigator = require(path.join(imageRoot, "lib/navigation"));
       directory = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "posix-ownership-owned-")));
       editors = [];
+      navigators = [];
     });
 
     afterEach(async () => {
       for (const editor of editors) editor.destroy();
+      for (const navigator of navigators) navigator.destroy?.();
       await lumine.packages.deactivatePackage("jupyter-view");
       await lumine.fileWatchClient.settlePendingTeardown();
       const relative = path.relative(fs.realpathSync(os.tmpdir()), directory);
@@ -33,6 +35,18 @@ if (process.platform === "linux")
       fs.rmSync(directory, { recursive: true, force: true });
       main = directory = editors = ImageNavigator = null;
     });
+
+    function imageNavigator() {
+      // Current navigation consumes a directory service. Feed real native
+      // filenames to both versions; the historical constructor ignores this
+      // option and retains its own directory reader and path ownership bug.
+      const navigator = new ImageNavigator({
+        listDirectoryFiles: async (folder) =>
+          (await fs.promises.readdir(folder)).map((name) => path.join(folder, name)),
+      });
+      navigators.push(navigator);
+      return navigator;
+    }
 
     function notebook(name, source) {
       const file = path.join(directory, name);
@@ -82,7 +96,7 @@ if (process.platform === "linux")
       fs.writeFileSync(upper, "owned upper listing entry");
       fs.writeFileSync(lower, "owned lower listing entry");
       expect(fs.statSync(upper).ino).not.toBe(fs.statSync(lower).ino);
-      const navigator = new ImageNavigator();
+      const navigator = imageNavigator();
       const first = await navigator.getFileList(upper);
       const second = await navigator.getFileList(lower);
       expect(first.files[first.currentIndex]).toBe(upper);
@@ -96,7 +110,7 @@ if (process.platform === "linux")
       expect(second.document.getCell(0).source).toBe("second source");
       const image = path.join(directory, "first.png");
       fs.writeFileSync(image, "owned ordinary listing entry");
-      const listing = await new ImageNavigator().getFileList(image);
+      const listing = await imageNavigator().getFileList(image);
       expect(listing.files[listing.currentIndex]).toBe(image);
     });
   });
