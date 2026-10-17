@@ -40,6 +40,8 @@ jobs:
         run: npm run lint
       - name: Check formatting
         run: npm run format:check
+      - name: Check the historical control bootstrap
+        run: node --test test/native-control.test.js
       - name: Audit dependencies
         run: npm audit --audit-level=moderate
       - name: Check package contents
@@ -91,7 +93,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: lumine-code/image-editor
-          ref: fb5a1b99c3e32be1ebbc4e0ba4a15f28a883ce83
+          ref: 356ff72f0bb254e5fa4e52799379945aa37c1dea
           path: image-editor-current
       - uses: actions/setup-node@v7
         with:
@@ -140,6 +142,9 @@ jobs:
         run: |
           ln -s "$GITHUB_WORKSPACE/jupyter-view/node_modules" "$GITHUB_WORKSPACE/jupyter-view-original/node_modules"
           cp ../jupyter-view/spec/native-path-ownership-spec.js ../jupyter-view-original/spec/
+          # Adapt only the pinned control's cold lifecycle to current Core.
+          # Its original notebook/document/path code stays byte-for-byte intact.
+          node ../jupyter-view/script/prepare-native-control.js ../jupyter-view-original
           # Run the identical native assertions against the historical runtime;
           # its unrelated old pane fixtures target a retired Core contract.
           # Keep Xvfb authority outside test-owned scratch space and avoid its
