@@ -3,6 +3,30 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 describe("the notebook document registry bootstrap", () => {
+  it("preserves recovered cells when another snapshot starts before hydration completes", async () => {
+    const Registry = require("../lib/notebook-document-registry");
+    const source = new Registry();
+    const registry = new Registry();
+    try {
+      const original = await source.createUntitledDocument();
+      original.updateCellSource(0, "unsaved_work = 42");
+      const state = source.serialize();
+      registry.restoreSessionState(state);
+      const loading = registry.getOrCreateDocumentById(original.id);
+
+      expect(registry.isDocumentLoading(original.id)).toBe(true);
+      expect(registry.serialize()[original.id]).toEqual(state[original.id]);
+      const document = await loading;
+      document.updateCellSource(0, "newer_work = 43");
+      expect(registry.serialize()[original.id].notebookData.cells[0].source).toEqual([
+        "newer_work = 43",
+      ]);
+    } finally {
+      source.destroy();
+      registry.destroy();
+    }
+  });
+
   it("hydrates recovery records without replacing a live document or its registry", async () => {
     const Registry = require("../lib/notebook-document-registry");
     const registry = new Registry();
