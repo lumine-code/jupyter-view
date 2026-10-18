@@ -103,7 +103,7 @@ describe("notebook cell magic syntax", () => {
       "T",
     );
     await settle(editor);
-    const parse = spyOn(mode, "parseAsync").and.callThrough();
+    const parse = spyOn(mode, "parse").and.callThrough();
 
     view.update({ cell: { ...view.props.cell, source: editor.getText() }, cellSourceRevision: 1 });
     await settle(editor);
