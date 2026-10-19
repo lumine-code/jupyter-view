@@ -52,6 +52,25 @@ describe("output view", () => {
       expect(view.element.textContent).toContain("hello");
     });
 
+    it("strips ANSI escapes from fallback text without changing stored outputs", () => {
+      const colored = "\u001b[30;43m[ppic:1]\u001b[0m";
+      const outputs = [
+        { output_type: "stream", name: "stdout", text: [colored, " plain"] },
+        { output_type: "error", traceback: [colored, "\u001b[38;2;12;34;56mError\u001b[0m"] },
+        { output_type: "execute_result", data: { "text/plain": colored } },
+        { output_type: "unknown", text: colored },
+      ];
+      const stored = JSON.stringify(outputs);
+      view = mount(outputs);
+      expect(Array.from(view.element.querySelectorAll("pre"), (node) => node.textContent)).toEqual([
+        "[ppic:1] plain",
+        "[ppic:1]\nError",
+        "[ppic:1]",
+        "[ppic:1]",
+      ]);
+      expect(JSON.stringify(outputs)).toBe(stored);
+    });
+
     it("renders an error as its traceback text", () => {
       view = mount([
         { output_type: "error", ename: "ValueError", evalue: "bad", traceback: ["Trace", "bad"] },
@@ -121,6 +140,13 @@ describe("output view", () => {
       // double; what matters is that everything went through, normalized.
       expect(service.calls.length).toBeGreaterThan(0);
       expect(service.calls.every((output) => output._normalized)).toBe(true);
+    });
+
+    it("passes ANSI colors to the shared renderer without stripping or rewriting them", () => {
+      const text = "\u001b[30;43m[ppic:1]\u001b[0m \u001b[38;2;12;34;56mRGB\u001b[0m";
+      view = mount([{ output_type: "stream", name: "stdout", text }]);
+      expect(service.calls.length).toBeGreaterThan(0);
+      expect(service.calls.every((output) => output.text === text)).toBe(true);
     });
 
     it("keeps each output's captured session generation across reruns and renderer replacement", () => {

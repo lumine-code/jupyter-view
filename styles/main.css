@@ -607,109 +607,7 @@
       }
     }
 
-    /* ANSI color support (class names match Anser library output) */
-    .ansi-bold {
-      font-weight: bold;
-    }
-    .ansi-dim {
-      opacity: 0.5;
-    }
-    .ansi-italic {
-      font-style: italic;
-    }
-    .ansi-underline {
-      text-decoration: underline;
-    }
-    .ansi-blink {
-      animation: blink 1s infinite;
-    }
-    .ansi-reverse {
-      filter: invert(100%);
-    }
-    .ansi-hidden {
-      visibility: hidden;
-    }
-    .ansi-strikethrough {
-      text-decoration: line-through;
-    }
-
-    /* Standard foreground colors (Anser uses -fg suffix) */
-    .ansi-black-fg {
-      color: var(--terminal-color-black);
-    }
-    .ansi-red-fg {
-      color: var(--terminal-color-red);
-    }
-    .ansi-green-fg {
-      color: var(--terminal-color-green);
-    }
-    .ansi-yellow-fg {
-      color: var(--terminal-color-yellow);
-    }
-    .ansi-blue-fg {
-      color: var(--terminal-color-blue);
-    }
-    .ansi-magenta-fg {
-      color: var(--terminal-color-magenta);
-    }
-    .ansi-cyan-fg {
-      color: var(--terminal-color-cyan);
-    }
-    .ansi-white-fg {
-      color: var(--terminal-color-white);
-    }
-
-    /* Bright foreground colors */
-    .ansi-bright-black-fg {
-      color: var(--terminal-color-bright-black);
-    }
-    .ansi-bright-red-fg {
-      color: var(--terminal-color-bright-red);
-    }
-    .ansi-bright-green-fg {
-      color: var(--terminal-color-bright-green);
-    }
-    .ansi-bright-yellow-fg {
-      color: var(--terminal-color-bright-yellow);
-    }
-    .ansi-bright-blue-fg {
-      color: var(--terminal-color-bright-blue);
-    }
-    .ansi-bright-magenta-fg {
-      color: var(--terminal-color-bright-magenta);
-    }
-    .ansi-bright-cyan-fg {
-      color: var(--terminal-color-bright-cyan);
-    }
-    .ansi-bright-white-fg {
-      color: var(--terminal-color-bright-white);
-    }
-
-    /* Background colors (Anser uses -bg suffix) */
-    .ansi-black-bg {
-      background-color: var(--terminal-color-black);
-    }
-    .ansi-red-bg {
-      background-color: var(--terminal-color-red);
-    }
-    .ansi-green-bg {
-      background-color: var(--terminal-color-green);
-    }
-    .ansi-yellow-bg {
-      background-color: var(--terminal-color-yellow);
-    }
-    .ansi-blue-bg {
-      background-color: var(--terminal-color-blue);
-    }
-    .ansi-magenta-bg {
-      background-color: var(--terminal-color-magenta);
-    }
-    .ansi-cyan-bg {
-      background-color: var(--terminal-color-cyan);
-    }
-    .ansi-white-bg {
-      background-color: var(--terminal-color-white);
-    }
+    /* ANSI output is rendered by the shared jupyter.output service. */
   }
 
   /* Cell actions (appear on hover) */
@@ -770,16 +668,6 @@
   }
 }
 
-@keyframes blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
-}
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -793,7 +681,6 @@
   }
   .jupyter-view .jupyter-cell.running,
   .jupyter-view .cell-gutter.running::before,
-  .jupyter-view .jupyter-outputs .ansi-blink,
   .jupyter-view .jupyter-notebook-loading .loading-spinner-large {
     animation: none;
   }

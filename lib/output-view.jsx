@@ -11,6 +11,7 @@
  */
 
 const etch = require("@lumine-code/etch");
+const Anser = require("anser");
 const outputRenderer = require("./output-renderer");
 const { optionsForOutput } = require("./traceback-navigation");
 
@@ -19,13 +20,19 @@ function asText(value) {
   return value == null ? "" : String(value);
 }
 
+function asPlainText(value) {
+  return Anser.ansiToText(asText(value));
+}
+
 const FALLBACK_IMAGE_MIMES = ["image/webp", "image/png", "image/jpeg", "image/gif"];
 
 /** The readable-without-the-hub subset: text, images, streams, error text. */
 function renderFallbackOutput(output) {
   if (output.output_type === "stream") {
     return (
-      <pre className={`output-stream output-${output.name || "stream"}`}>{asText(output.text)}</pre>
+      <pre className={`output-stream output-${output.name || "stream"}`}>
+        {asPlainText(output.text)}
+      </pre>
     );
   }
   if (output.output_type === "error") {
@@ -33,7 +40,7 @@ function renderFallbackOutput(output) {
       output.traceback && output.traceback.length
         ? output.traceback
         : [`${output.ename || "Error"}: ${output.evalue || ""}`];
-    return <pre className="output-error">{asText(traceback.join("\n"))}</pre>;
+    return <pre className="output-error">{asPlainText(traceback.join("\n"))}</pre>;
   }
   if (output.output_type === "display_data" || output.output_type === "execute_result") {
     const data = output.data || {};
@@ -43,12 +50,12 @@ function renderFallbackOutput(output) {
       return <img className="output-image" src={src} draggable={false} />;
     }
     if (data["text/plain"]) {
-      return <pre className="output-text">{asText(data["text/plain"])}</pre>;
+      return <pre className="output-text">{asPlainText(data["text/plain"])}</pre>;
     }
     return null;
   }
   if (output.text) {
-    return <pre className="output-text">{asText(output.text)}</pre>;
+    return <pre className="output-text">{asPlainText(output.text)}</pre>;
   }
   return null;
 }
