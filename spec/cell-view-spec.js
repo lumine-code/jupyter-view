@@ -42,6 +42,25 @@ function mount(cell, props = {}) {
 describe("cell view", () => {
   let view;
 
+  it("keeps syntax paint out of source dirty state and source notifications", async () => {
+    jasmine.useRealClock();
+    await lumine.packages.activatePackage("language-python");
+    const onSourceChange = jasmine.createSpy("onSourceChange");
+    view = mount(makeCell(), { onSourceChange });
+    await view.editor.whenGrammarSettled();
+    const buffer = view.editor.getBuffer();
+    await buffer.getLanguageMode().refresh?.();
+    buffer.getLanguageMode().emitter.emit("did-change-highlighting", buffer.getRange());
+    expect(view._editorIsDirty).toBeFalse();
+    expect(view._localChangeSourceRevision).toBeNull();
+    expect(onSourceChange).not.toHaveBeenCalled();
+    view.update({ cell: makeCell({ source: "external = 2" }), cellSourceRevision: 1 });
+    flush(view);
+    expect(view.editor.getText()).toBe("external = 2");
+    view.editor.insertText("# ");
+    expect(view._editorIsDirty).toBeTrue();
+  });
+
   afterEach(() => {
     view?.destroy();
     view = null;

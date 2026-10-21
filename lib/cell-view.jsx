@@ -335,10 +335,7 @@ class CellView {
     this.editor.setText(cell.source);
 
     this._magicPrefix = new CellMagicPrefix(this.editor.getBuffer());
-    this.rootRangesDisposable = lumine.grammars.setRootLanguageRanges(
-      this.editor.getBuffer(),
-      () => (this.cellMagic() ? [this._magicPrefix.bodyRange()] : null),
-    );
+    this.updateRootRangesPolicy();
     this._lastKnownLanguage = this.grammarLanguage();
 
     // Apply syntax highlighting grammar
@@ -384,7 +381,7 @@ class CellView {
     });
 
     // Listen for changes - track dirty state to avoid race conditions
-    this.editorChangeSubscription = this.editor.onDidChange(() => {
+    this.editorChangeSubscription = this.editor.getBuffer().onDidChangeText(() => {
       this.refreshCellMagic();
       this._editorIsDirty = true;
       if (!this._updatingFromExternal && this._localChangeSourceRevision === null) {
@@ -551,6 +548,7 @@ class CellView {
 
   refreshCellMagic() {
     if (!this.editor) return;
+    this.updateRootRangesPolicy();
     const magic = this.cellMagic();
     const marker = magic ? this._magicPrefix.marker : null;
     if (marker !== this._magicDecorationMarker) {
@@ -587,8 +585,27 @@ class CellView {
     return null;
   }
 
+  updateRootRangesPolicy() {
+    if (!this.editor) return;
+    const enabled =
+      this.props.cell?.type === "code" &&
+      normalizeLanguage(this.props.notebookLanguage || "python") === "python";
+    if (enabled === this._rootRangesEnabled && (!enabled || this.rootRangesDisposable)) return;
+    const previous = this.rootRangesDisposable;
+    this._rootRangesEnabled = enabled;
+    this.rootRangesDisposable = enabled
+      ? lumine.grammars.setRootLanguageRanges(this.editor.getBuffer(), {
+          module: require.resolve("./cell-magic"),
+          method: "rootRanges",
+          params: { enabled },
+        })
+      : null;
+    previous?.dispose();
+  }
+
   applyGrammar() {
     if (!this.editor) return;
+    this.updateRootRangesPolicy();
 
     // A grammar picked for this cell outranks what its type implies.
     const cellLanguage = cellLanguageOf(this.props.cell);
