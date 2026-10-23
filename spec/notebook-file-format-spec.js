@@ -63,6 +63,48 @@ describe("notebook file format identity", () => {
     expect(sourceEditor.getEncoding()).toBe("utf8");
   });
 
+  it("saves display outputs without transient state and preserves their live display IDs", async () => {
+    await openFile(withLineEndings(notebook(), "\n"));
+    const cell = document_.getCell(0);
+    const outputs = [
+      Object.freeze({
+        output_type: "display_data",
+        data: { "text/plain": "live display" },
+        metadata: { transient: "persistent MIME metadata" },
+        transient: Object.freeze({ display_id: "owned-live-display" }),
+      }),
+      Object.freeze({
+        output_type: "execute_result",
+        data: { "text/plain": "42" },
+        metadata: {},
+        execution_count: 1,
+        transient: Object.freeze({}),
+      }),
+    ];
+    for (const output of outputs) cell.addOutput(output);
+
+    expect(await editor.save()).toBe(true);
+
+    expect(JSON.parse(fs.readFileSync(filePath, "utf8")).cells[0].outputs).toEqual([
+      {
+        output_type: "display_data",
+        data: { "text/plain": "live display" },
+        metadata: { transient: "persistent MIME metadata" },
+      },
+      {
+        output_type: "execute_result",
+        data: { "text/plain": "42" },
+        metadata: {},
+        execution_count: 1,
+      },
+    ]);
+    expect(cell.outputs[0]).toBe(outputs[0]);
+    expect(cell.outputs[0].transient).toBe(outputs[0].transient);
+    expect(cell.outputs[0].transient.display_id).toBe("owned-live-display");
+    expect(cell.outputs[1]).toBe(outputs[1]);
+    expect(cell.outputs[1].transient).toEqual({});
+  });
+
   it("detects, converts, saves, undoes, and redoes line endings through the source editor", async () => {
     const sourceEditor = await openFile(withLineEndings(notebook(), "\n"));
     const changes = [];
