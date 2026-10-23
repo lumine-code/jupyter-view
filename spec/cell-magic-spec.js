@@ -72,7 +72,8 @@ describe("notebook cell magic syntax", () => {
     const editor = mount("\n%%html --isolated\n<b>one</b>\n");
     const mode = await settle(editor);
     const root = mode.rootLanguageLayer;
-    const generation = mode.getSyntaxGeneration?.();
+    const token = editor.getBuffer().getSyntaxSnapshotToken();
+    expect(token).not.toBeNull();
     const policy = view.rootRangesDisposable;
     const prefix = view._magicPrefix.marker;
     const decoration = view._magicDecoration;
@@ -87,11 +88,14 @@ describe("notebook cell magic syntax", () => {
     await mode.atGrammarSettlement();
     expect(editor.getBuffer().getLanguageMode()).toBe(mode);
     if (root) expect(mode.rootLanguageLayer).toBe(root);
-    expect(mode.getSyntaxGeneration?.()).toBe(generation);
+    // Reuse the syntax owner while retiring caches bound to the previous text.
+    expect(editor.getBuffer().getSyntaxSnapshotToken()).not.toBeNull();
+    expect(editor.getBuffer().getSyntaxSnapshotToken()).not.toBe(token);
     expect(view.rootRangesDisposable).toBe(policy);
     expect(view._magicPrefix.marker).toBe(prefix);
     expect(view._magicDecoration).toBe(decoration);
     expect(assign).not.toHaveBeenCalled();
+    expect(editor.getText()).toBe("\n%%html --isolated\n<b>two</b>\n");
     expect((await inspect(editor)).hasError).toBe(false);
     expect((await inspect(editor)).start.row).toBe(2);
   });
