@@ -44,6 +44,36 @@ describe("jupyter adapter kernel language", () => {
     expect(adapter.getKernelGrammar().scopeName).toBe("source.python");
   });
 
+  it("does not read source for a None cell and resumes after restoring its grammar", () => {
+    const cell = document_.getCell(0);
+    document_.updateCellSource(0, "original()");
+    editor.setCellLanguage(0, lumine.grammars.nullGrammar.scopeName);
+    const source = Object.getOwnPropertyDescriptor(cell, "source");
+    Object.defineProperty(cell, "source", {
+      configurable: true,
+      get() {
+        throw new Error("None cell source must not be read");
+      },
+    });
+    try {
+      const target = adapter.getRunTarget(cell.id);
+      expect(target.grammar).toBe(lumine.grammars.nullGrammar);
+      expect(target.executable).toBe(false);
+      expect(target.source).toBe("");
+    } finally {
+      Object.defineProperty(cell, "source", source);
+    }
+    expect(cell.source).toBe("original()");
+    expect(editor.getCellEditorById(cell.id).getText()).toBe("original()");
+    const serialized = document_.toJSON().cells[0];
+    expect(serialized.source.join("")).toBe("original()");
+    expect(serialized.metadata.vscode.languageId).toBe(lumine.grammars.nullGrammar.scopeName);
+    editor.setCellLanguage(0, "python");
+    const target = adapter.getRunTarget(cell.id);
+    expect(target.executable).toBe(true);
+    expect(target.source).toBe("original()");
+  });
+
   it("derives an explicit kernel's language without consulting a cell grammar", () => {
     editor.setCellLanguage(0, "json");
     expect(adapter.getKernelLanguage({ name: "julia-1.11", display_name: "Julia 1.11" })).toBe(

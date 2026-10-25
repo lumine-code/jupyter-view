@@ -51,6 +51,21 @@ describe("notebook execution requests and provider lifecycle", () => {
     expect(request.targets.map((target) => target.source)).toEqual(["original()"]);
   });
 
+  it("does not request execution for a None cell and resumes when its grammar returns", async () => {
+    notebook.setCellLanguage(0, lumine.grammars.nullGrammar.scopeName);
+    const requested = spyOn(lumine.packages, "requestService").and.resolveTo();
+    await main.executeNotebook("active", false, event());
+    expect(requested).not.toHaveBeenCalled();
+    expect(lumine.commands.canDispatch(notebook._containerElement, "jupyter-view:run-cell")).toBe(
+      false,
+    );
+    notebook.setCellLanguage(0, "python");
+    const execution = runtime();
+    edges.add(main.consumeJupyterExecution(execution));
+    await main.executeNotebook("active", false, event());
+    expect(execution.execute).toHaveBeenCalled();
+  });
+
   it("captures the invocation's selected cells before runtime activation", async () => {
     const execution = runtime();
     const second = notebook.document.insertCell(1, "code");
