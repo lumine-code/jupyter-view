@@ -106,7 +106,7 @@ describe("notebook source and structural operations", () => {
     expect(adapter.getResultCount()).toBe(0);
   });
 
-  it("preserves full-cell regex context and capture substitutions while replacing", () => {
+  it("preserves full-cell regex context and capture substitutions while replacing", async () => {
     const adapter = main.provideSearchAdapter().getAdapterForItem(editor);
     const input = editor.view.cellViews.get(document.cells[0].id).editor;
     for (const [source, regex, replacement] of [
@@ -116,29 +116,29 @@ describe("notebook source and structural operations", () => {
       ["one=1 two=2", /(?<key>\w+)=(\d+)/g, "$<key>:$2"],
     ]) {
       input.setText(source);
-      editor.flushPendingCellSourceChanges();
-      adapter.search({
+      await editor.flushPendingCellSourceChanges();
+      await adapter.search({
         findPattern: regex.source,
         useRegex: true,
         getFindPatternRegex: () => regex,
       });
-      adapter.replaceAll(replacement);
+      await adapter.replaceAll(replacement);
       expect(input.getText()).toBe(source.replace(regex, replacement));
     }
   });
 
-  it("recomputes matches against a visible cell edit before the delayed rescan", () => {
+  it("recomputes matches against a visible cell edit before the delayed rescan", async () => {
     const adapter = main.provideSearchAdapter().getAdapterForItem(editor);
     const input = editor.view.cellViews.get(document.cells[0].id).editor;
     input.setText("one target two");
-    editor.flushPendingCellSourceChanges();
-    adapter.search({
+    await editor.flushPendingCellSourceChanges();
+    await adapter.search({
       findPattern: "target",
       useRegex: false,
       getFindPatternRegex: () => /target/g,
     });
     input.setText("prefix one target two");
-    adapter.replaceAll("changed");
+    await adapter.replaceAll("changed");
     expect(input.getText()).toBe("prefix one changed two");
   });
 });

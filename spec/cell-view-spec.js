@@ -276,7 +276,7 @@ describe("cell view", () => {
     );
     await stopped;
     expect(onSourceChange.calls.count()).toBe(1);
-    expect(onSourceChange).toHaveBeenCalledWith("value = 3\n");
+    expect(onSourceChange.calls.mostRecent().args[0].toString()).toBe("value = 3\n");
   });
 
   it("offers run, clear and delete on a code cell, delete alone otherwise", () => {

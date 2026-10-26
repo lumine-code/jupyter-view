@@ -60,6 +60,21 @@ describe("live notebook MCP control", () => {
     });
   }
 
+  it("rejects oversized operation input before fingerprint serialization", async () => {
+    const { notebookId, document } = await create();
+    const source = {
+      toJSON: jasmine.createSpy("untrusted serializer").and.throwError("Must not serialize"),
+    };
+    await expectAsync(
+      edit(notebookId, "replace", { cellId: document.cells[0].id, source }),
+    ).toBeRejectedWithError(/scalar values/);
+    expect(source.toJSON).not.toHaveBeenCalled();
+    await expectAsync(
+      edit(notebookId, "replace", { cellId: document.cells[0].id, source: "x".repeat(1000001) }),
+    ).toBeRejectedWithError(/input budget/);
+    expect(document.cells[0].source).toBe("");
+  });
+
   it("discovers unsaved IDs and reads bounded source and outputs without active fallback", async () => {
     const { document, notebookId } = await create();
     document.updateCellSource(0, "x".repeat(5000));

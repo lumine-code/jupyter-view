@@ -180,7 +180,7 @@ describe("untitled notebook file state", () => {
 
     const state = editor.document.serializeState();
 
-    expect(state.notebookData.cells[0].source).toEqual(["pending after save"]);
+    expect(state.notebookData.cells[0].sourceSnapshot.toString()).toBe("pending after save");
     expect(state.fileState).toBe("modified");
     expect(state.currentHistoryStateId).not.toBe(state.savedHistoryStateId);
   });

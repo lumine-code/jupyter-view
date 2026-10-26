@@ -18,9 +18,9 @@ describe("the notebook document registry bootstrap", () => {
       expect(registry.serialize()[original.id]).toEqual(state[original.id]);
       const document = await loading;
       document.updateCellSource(0, "newer_work = 43");
-      expect(registry.serialize()[original.id].notebookData.cells[0].source).toEqual([
-        "newer_work = 43",
-      ]);
+      expect(
+        registry.serialize()[original.id].notebookData.cells[0].sourceSnapshot.toString(),
+      ).toBe("newer_work = 43");
     } finally {
       source.destroy();
       registry.destroy();

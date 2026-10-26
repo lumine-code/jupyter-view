@@ -121,6 +121,10 @@ While a notebook is the active pane item, `search-panel:show`, `search-panel:fin
 - Markdown cells are searched by source text; navigation switches a rendered markdown cell to edit mode before selecting the text.
 - Replace works across code, markdown, and raw cells and updates the notebook document model.
 
+The adapter implements `search.adapter@2.0.0`. It searches immutable cell sources cooperatively, reports a lower bound while counting and an exact total on completion, and retains only the current result for decoration. Navigation can find a nearby result before counting completes. Replacement prepares every target cell first, validates source revisions and marker state, and publishes all cell roots and notebook model sources before notifying observers. Cancellation before publication preserves every cell; an observer failure after publication is reported as a committed edit.
+
+Navigation headings use bounded title previews (256 UTF-16 units) and a presentation budget of 5,000 headings or 16 ms per collection. An incomplete outline contains an explicit “Outline incomplete” entry; these presentation limits do not change cell text or search coverage.
+
 ## Contributing
 
 Got ideas to make this package better, found a bug, or want to help add new features? Just drop your thoughts on GitHub. Any feedback is welcome!

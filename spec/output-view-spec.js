@@ -42,6 +42,19 @@ describe("output view", () => {
     outputRenderer.set(null);
   });
 
+  it("preserves oversized stored output without joining it or entering a renderer", () => {
+    const text = Array(800).fill("x".repeat(32768));
+    spyOn(text, "join").and.throwError("Whole output allocation");
+    const service = fakeService();
+    outputRenderer.set(service);
+    const output = { output_type: "stream", text };
+    view = mount([output]);
+    expect(view.element.textContent).toContain("complete stored data is preserved");
+    expect(service.calls.length).toBe(0);
+    expect(text.join).not.toHaveBeenCalled();
+    expect(output.text).toBe(text);
+  });
+
   describe("without the jupyter.output service", () => {
     beforeEach(() => outputRenderer.set(null));
 

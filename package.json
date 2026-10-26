@@ -66,7 +66,7 @@
     },
     "jupyter.adapter": {
       "versions": {
-        "1.0.0": "provideJupyterAdapter"
+        "2.0.0": "provideJupyterAdapter"
       }
     },
     "linter.adapter": {
@@ -86,7 +86,7 @@
     },
     "search.adapter": {
       "versions": {
-        "1.0.0": "provideSearchAdapter"
+        "2.0.0": "provideSearchAdapter"
       }
     },
     "background-tips.provider": {

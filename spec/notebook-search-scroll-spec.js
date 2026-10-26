@@ -1,11 +1,13 @@
+const { TextBuffer } = require("lumine");
 const NotebookSearchAdapter = require("../lib/notebook-search");
 
 describe("notebook search scrolling", () => {
-  let adapter, editor;
+  let adapter, editor, buffer;
 
   beforeEach(() => {
+    buffer = new TextBuffer("abc");
     editor = {
-      getText: () => "abc",
+      getBuffer: () => buffer,
       getCursorBufferPosition: () => ({ row: 0, column: 0 }),
       setSelectedBufferRange: jasmine.createSpy("select result"),
       scrollToCursorPosition: jasmine.createSpy("reveal result"),
@@ -28,6 +30,8 @@ describe("notebook search scrolling", () => {
     adapter._clearHighlights = () => {};
     adapter._highlight = () => {};
   });
+
+  afterEach(() => buffer.destroy());
 
   for (const method of ["selectNext", "selectPrevious", "selectFirstFromCursor", "selectAll"]) {
     it(`uses the caller's nearest mode for ${method}`, () => {

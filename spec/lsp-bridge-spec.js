@@ -83,6 +83,42 @@ describe("the language-server bridge", () => {
     manager = null;
   });
 
+  it("passes snapshot metadata to capable providers without materializing sources", () => {
+    const source = {
+      length: 512 * 1024 * 1024,
+      toString: jasmine.createSpy("whole cell").and.throwError("must not read"),
+    };
+    const document = fakeDocument({
+      filePath: "C:\\proj\\large.ipynb",
+      cells: [{ id: "large", type: "code", getSourceSnapshot: () => source }],
+    });
+    const ide = fakeIde();
+    ide.supportsNotebookTextSources = true;
+    manager = new LspBridgeManager(ide, fakeHost([document]));
+    expect(ide.opened[0].descriptor.cells[0].textSource).toBe(source);
+    expect(source.toString).not.toHaveBeenCalled();
+  });
+
+  it("suspends legacy providers before oversized reads and recovers after shrinking", async () => {
+    const source = {
+      length: 512 * 1024 * 1024,
+      toString: jasmine.createSpy("whole cell").and.throwError("must not read"),
+    };
+    const document = fakeDocument({
+      filePath: "C:\\proj\\legacy.ipynb",
+      cells: [{ id: "large", type: "code", getSourceSnapshot: () => source }],
+    });
+    const ide = fakeIde();
+    spyOn(lumine.notifications, "addWarning");
+    manager = new LspBridgeManager(ide, fakeHost([document]));
+    expect(ide.opened.length).toBe(0);
+    expect(source.toString).not.toHaveBeenCalled();
+    document.cells = [{ id: "large", type: "code", source: "😀\r\n" }];
+    document.emitter.emit("did-change", { affectsSource: true });
+    await flushFrame();
+    expect(ide.opened[0].descriptor.cells[0].text).toBe("😀\r\n");
+  });
+
   it("opens pre-existing and later documents, and skips untitled ones", () => {
     const untitled = fakeDocument({ filePath: null });
     const host = fakeHost([fakeDocument({ filePath: "C:\\proj\\a.ipynb" }), untitled]);

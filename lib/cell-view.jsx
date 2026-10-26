@@ -14,6 +14,7 @@ const {
 } = require("./notebook-language");
 const { CellMagicPrefix, languageForMagic } = require("./cell-magic");
 const { writeCellDrag } = require("./cell-drag");
+const cellSource = require("./cell-source");
 
 // The cell's own language id, when a grammar was picked for it explicitly.
 // Read straight off the metadata so plain cell snapshots work too.
@@ -57,7 +58,12 @@ class EditorHost {
 
   render() {
     const max = lumine.config.get("jupyter-view.input.maxHeight");
-    const style = max > 0 ? { maxHeight: `${max}px`, overflowY: "auto" } : {};
+    const bounded = this.props.editorElement?.getModel?.().getAutoHeight() === false;
+    const style = bounded
+      ? { height: `${max > 0 ? max : 400}px`, overflow: "hidden" }
+      : max > 0
+        ? { maxHeight: `${max}px`, overflowY: "auto" }
+        : {};
     return <div className="cell-editor-container" style={style} />;
   }
 
@@ -85,7 +91,7 @@ class CellView {
     this.props = props;
     this.editorElement = null;
     this.editor = null;
-    this._lastKnownSource = props.cell ? props.cell.source : "";
+    this._lastKnownSource = cellSource.forCell(props.cell);
     this._lastKnownType = props.cell ? props.cell.type : "code"; // Track cell type for change detection
     this._lastKnownLanguage = this.grammarLanguage();
     this._editorIsDirty = false; // Track if editor has unsaved changes
@@ -110,6 +116,7 @@ class CellView {
 
   isMarkdownRendered(cell, active, mode) {
     if (!cell || cell.type !== "markdown") return false;
+    if (cellSource.forCell(cell).length > 1024 * 1024) return false;
     return !active || mode !== "edit";
   }
 
@@ -267,6 +274,11 @@ class CellView {
         {this.renderGutter()}
         <div className="cell-content">
           {this.renderInput()}
+          {this.props.cell.outputIncomplete ? (
+            <div className="text-warning padded">
+              Output is incomplete. {this.props.cell.outputIncomplete}
+            </div>
+          ) : null}
           {outputs.length > 0 ? (
             <div className="cell-output-container">
               <OutputView
@@ -326,13 +338,17 @@ class CellView {
     if (this.editor && this.editorElement) return;
 
     // Create a text editor
+    const source = cellSource.forCell(cell);
     this.editor = lumine.workspace.buildTextEditor({
       mini: false,
       lineNumberGutterVisible: true,
-      autoHeight: true,
+      autoHeight: source.length < 32 * 1024 * 1024 && source.lineCount < 300000,
     });
 
-    this.editor.setText(cell.source);
+    this.editor
+      .getBuffer()
+      .setTextInRange(this.editor.getBuffer().getRange(), source, { normalizeLineEndings: false });
+    this.updateEditorSizing();
 
     this._magicPrefix = new CellMagicPrefix(this.editor.getBuffer());
     this.updateRootRangesPolicy();
@@ -345,6 +361,7 @@ class CellView {
     // Get the editor element
     this.editorElement = lumine.views.getView(this.editor);
     this.editorElement.classList.add("jupyter-cell-editor");
+    this.updateEditorSizing();
 
     // Register with Lumine's global text editor registry so cross-surface
     // features and lumine.textEditors.observe() see this editor. The
@@ -383,12 +400,18 @@ class CellView {
     // Listen for changes - track dirty state to avoid race conditions
     this.editorChangeSubscription = this.editor.getBuffer().onDidChangeText(() => {
       this.refreshCellMagic();
+      this.updateEditorSizing();
       this._editorIsDirty = true;
       if (!this._updatingFromExternal && this._localChangeSourceRevision === null) {
         this._localChangeSourceRevision = this.props.cellSourceRevision || 0;
       }
       if (!this._updatingFromExternal) {
-        this.setPendingSourceChange(this.editor.getText() !== (this.props.cell?.source || ""));
+        this.setPendingSourceChange(
+          !cellSource.equal(
+            this.editor.getBuffer().getTextSnapshot(),
+            cellSource.forCell(this.props.cell),
+          ),
+        );
       }
     });
 
@@ -401,8 +424,8 @@ class CellView {
         this.setPendingSourceChange(false);
         return;
       }
-      const source = this.editor.getText();
-      const modelSource = this.props.cell?.source || "";
+      const source = this.editor.getBuffer().getTextSnapshot();
+      const modelSource = cellSource.forCell(this.props.cell);
       const currentSourceRevision = this.props.cellSourceRevision || 0;
       const localChangeSourceRevision = this._localChangeSourceRevision;
       this._localChangeSourceRevision = null;
@@ -410,13 +433,13 @@ class CellView {
       if (
         localChangeSourceRevision !== null &&
         localChangeSourceRevision !== currentSourceRevision &&
-        source !== modelSource
+        !cellSource.equal(source, modelSource)
       ) {
         this.applyExternalSource(modelSource);
         return;
       }
       // Only trigger source change if the source actually changed from last known
-      const sourceChanged = source !== this._lastKnownSource;
+      const sourceChanged = !cellSource.equal(source, this._lastKnownSource);
       this._lastKnownSource = source;
       this._editorIsDirty = false;
       if (sourceChanged && this.props.onSourceChange) {
@@ -714,7 +737,7 @@ class CellView {
   }
 
   applyExternalSource(source) {
-    if (this.editor.getText() !== source) {
+    if (!cellSource.equal(this.editor.getBuffer().getTextSnapshot(), source)) {
       const wasUpdatingFromExternal = this._updatingFromExternal;
       this._updatingFromExternal = true;
       const position = this.editor.getCursorBufferPosition();
@@ -729,6 +752,15 @@ class CellView {
     this._editorIsDirty = false;
     this._localChangeSourceRevision = null;
     this.setPendingSourceChange(false);
+    this.updateEditorSizing();
+  }
+
+  updateEditorSizing() {
+    const buffer = this.editor?.getBuffer();
+    if (!buffer) return;
+    const bounded = buffer.getLength() >= 32 * 1024 * 1024 || buffer.getLineCount() >= 300000;
+    this.editor.update({ autoHeight: !bounded });
+    if (this.editorElement) this.editorElement.style.height = bounded ? "100%" : "";
   }
 
   setPendingSourceChange(pending) {
@@ -748,7 +780,7 @@ class CellView {
 
     if (typeChanged || wasRendered !== willBeRendered) {
       this.destroyEditor();
-      this._lastKnownSource = props.cell ? props.cell.source : "";
+      this._lastKnownSource = cellSource.forCell(props.cell);
       this._lastKnownType = props.cell ? props.cell.type : "code";
       this._lastKnownLanguage = this.grammarLanguage();
       this._editorIsDirty = false;
@@ -760,10 +792,14 @@ class CellView {
     // The source changed somewhere else — another editor on the same cell, or
     // the model itself. Compare against what this view last knew rather than
     // against the editor text, which may be mid-edit.
-    if (this.editor && props.cell && props.cell.source !== this._lastKnownSource) {
-      this.applyExternalSource(props.cell.source);
+    if (
+      this.editor &&
+      props.cell &&
+      !cellSource.equal(cellSource.forCell(props.cell), this._lastKnownSource)
+    ) {
+      this.applyExternalSource(cellSource.forCell(props.cell));
     } else if (!this.editor && props.cell) {
-      this._lastKnownSource = props.cell.source;
+      this._lastKnownSource = cellSource.forCell(props.cell);
     }
 
     const grammarLanguage = this.grammarLanguage();

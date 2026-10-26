@@ -61,6 +61,16 @@ function renderFallbackOutput(output) {
 }
 
 function renderOutput(output, editor) {
+  try {
+    require("./output-budget").measure(output);
+  } catch {
+    return (
+      <div className="text-warning">
+        This output exceeds the rendering budget. Its complete stored data is preserved; open the
+        notebook as text to inspect it.
+      </div>
+    );
+  }
   const service = outputRenderer.get();
   if (!service) {
     return renderFallbackOutput(output);

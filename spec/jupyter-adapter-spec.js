@@ -61,7 +61,8 @@ describe("jupyter adapter kernel language", () => {
       expect(target.executable).toBe(false);
       expect(target.source).toBe("");
     } finally {
-      Object.defineProperty(cell, "source", source);
+      if (source) Object.defineProperty(cell, "source", source);
+      else delete cell.source;
     }
     expect(cell.source).toBe("original()");
     expect(editor.getCellEditorById(cell.id).getText()).toBe("original()");

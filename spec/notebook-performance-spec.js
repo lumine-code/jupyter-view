@@ -175,7 +175,7 @@ describe("notebook change tracking", () => {
     const state = document.serializeState();
 
     expect(state.fileState).toBe("conflicted");
-    expect(state.notebookData.cells[0].source).toEqual(["local edit"]);
+    expect(state.notebookData.cells[0].sourceSnapshot.toString()).toBe("local edit");
     expect(state.savedDiskFingerprint).not.toBeNull();
 
     const restored = new NotebookDocument(filePath);
@@ -388,13 +388,15 @@ describe("notebook change tracking", () => {
 
     expect(packageState[documentId].notebookData).toBeNull();
     expect(packageState[documentId].sourceControllerState.bufferState.filePath).toBeUndefined();
-    expect(packageState[documentId].sourceControllerState.bufferState.text).toBe(sourceText);
+    expect(packageState[documentId].sourceControllerState.bufferState.textSnapshot.toString()).toBe(
+      sourceText,
+    );
 
     // State written by the previous implementation had history metadata but
     // neither a file path nor text. The first restart after upgrading must
     // recover directly from that state instead of requiring an edit and a
     // second restart.
-    delete packageState[documentId].sourceControllerState.bufferState.text;
+    delete packageState[documentId].sourceControllerState.bufferState.textSnapshot;
 
     editor.destroy();
     registry.destroy();
