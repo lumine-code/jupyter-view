@@ -529,16 +529,24 @@ class CellView {
   // The tracked value deciding when the grammar must be re-applied: the cell's
   // own language when one was picked, the notebook's otherwise.
   grammarLanguage() {
+    const pickedLanguage = cellLanguageOf(this.props.cell);
+    if (pickedLanguage) return pickedLanguage;
+    if (this.isSyntaxDisabled()) return lumine.grammars.nullGrammar.scopeName;
     const magic = this.cellMagic();
-    return (
-      cellLanguageOf(this.props.cell) ||
-      (magic ? languageForMagic(magic.name) : this.props.notebookLanguage) ||
-      null
-    );
+    return (magic ? languageForMagic(magic.name) : this.props.notebookLanguage) || null;
+  }
+
+  isSyntaxDisabled() {
+    const scope = lumine.grammars.nullGrammar.scopeName;
+    const assigned = this.editor
+      ? lumine.grammars.getAssignedLanguageId(this.editor.getBuffer())
+      : undefined;
+    return assigned === scope || (assigned == null && cellLanguageOf(this.props.cell) === scope);
   }
 
   cellMagic() {
     if (
+      this.isSyntaxDisabled() ||
       this.props.cell?.type !== "code" ||
       normalizeLanguage(this.props.notebookLanguage || "python") !== "python"
     )
@@ -546,7 +554,7 @@ class CellView {
     return this._magicPrefix?.get() || null;
   }
 
-  refreshCellMagic() {
+  refreshCellMagic({ updateGrammar = true } = {}) {
     if (!this.editor) return;
     this.updateRootRangesPolicy();
     const magic = this.cellMagic();
@@ -563,7 +571,7 @@ class CellView {
         : null;
     }
     const language = this.grammarLanguage();
-    if (language !== this._lastKnownLanguage) {
+    if (updateGrammar && language !== this._lastKnownLanguage) {
       this._lastKnownLanguage = language;
       this.applyGrammar();
     }
@@ -588,6 +596,7 @@ class CellView {
   updateRootRangesPolicy() {
     if (!this.editor) return;
     const enabled =
+      !this.isSyntaxDisabled() &&
       this.props.cell?.type === "code" &&
       normalizeLanguage(this.props.notebookLanguage || "python") === "python";
     if (enabled === this._rootRangesEnabled && (!enabled || this.rootRangesDisposable)) return;
@@ -676,6 +685,16 @@ class CellView {
     if (!this.editor) return;
 
     const assignedScope = lumine.grammars.getAssignedLanguageId(this.editor.getBuffer());
+    if (assignedScope === lumine.grammars.nullGrammar.scopeName) {
+      this._lastKnownLanguage = assignedScope;
+      this._grammarRetrySubscription?.dispose();
+      this._grammarRetrySubscription = null;
+      clearTimeout(this._grammarRetryTimer);
+      this._grammarRetryScheduled = false;
+      this.props.onLanguageChange?.(assignedScope);
+      this.refreshCellMagic({ updateGrammar: false });
+      return;
+    }
     if (assignedScope == null) {
       // Auto Detect: back to what the cell's type and the notebook imply.
       this._lastKnownLanguage = this.props.notebookLanguage || null;
@@ -691,6 +710,7 @@ class CellView {
         : languageIdForGrammar(this.editor.getGrammar());
     this._lastKnownLanguage = languageId || this.props.notebookLanguage || null;
     if (this.props.onLanguageChange) this.props.onLanguageChange(languageId);
+    this.refreshCellMagic({ updateGrammar: false });
   }
 
   applyExternalSource(source) {

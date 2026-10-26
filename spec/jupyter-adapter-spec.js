@@ -74,6 +74,35 @@ describe("jupyter adapter kernel language", () => {
     expect(target.source).toBe("original()");
   });
 
+  it("pauses and resumes magic analysis across notebook splits without losing source", async () => {
+    const cell = document_.getCell(0);
+    document_.updateCellSource(0, "%%time\noriginal()\n");
+    const split = editor.copy();
+    await split._sourceEditorSetupPromise;
+    const views = [editor, split].map((item) => item.view.cellViews.get(cell.id));
+    const prefixes = views.map((view) => spyOn(view._magicPrefix, "get").and.callThrough());
+    try {
+      editor.setCellLanguage(0, lumine.grammars.nullGrammar.scopeName);
+      for (const view of views) {
+        expect(view.editor.getGrammar()).toBe(lumine.grammars.nullGrammar);
+        expect(view._magicDecoration).toBeNull();
+        expect(view.rootRangesDisposable).toBeNull();
+      }
+      const source = "\n%%time\nchanged()\n";
+      document_.updateCellSource(0, source);
+      prefixes.forEach((prefix) => expect(prefix).not.toHaveBeenCalled());
+      editor.setCellLanguage(0, "python");
+      for (const view of views) {
+        expect(view.editor.getGrammar().scopeName).toBe("source.python");
+        expect(view._magicDecoration).not.toBeNull();
+        expect(view.editor.getText()).toBe(source);
+      }
+      prefixes.forEach((prefix) => expect(prefix).toHaveBeenCalled());
+    } finally {
+      split.destroy();
+    }
+  });
+
   it("derives an explicit kernel's language without consulting a cell grammar", () => {
     editor.setCellLanguage(0, "json");
     expect(adapter.getKernelLanguage({ name: "julia-1.11", display_name: "Julia 1.11" })).toBe(

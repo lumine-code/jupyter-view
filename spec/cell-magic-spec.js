@@ -186,6 +186,44 @@ describe("notebook cell magic syntax", () => {
     expect((await inspect(editor)).start.row).toBe(1);
   });
 
+  it("does not scan magic prefixes for a cell restored with None", () => {
+    const { CellMagicPrefix } = require("../lib/cell-magic");
+    const prefix = spyOn(CellMagicPrefix.prototype, "get").and.callThrough();
+    const editor = mount("\n\n%%html\n<b>source</b>\n", {
+      metadata: { vscode: { languageId: lumine.grammars.nullGrammar.scopeName } },
+    });
+    expect(editor.getGrammar()).toBe(lumine.grammars.nullGrammar);
+    expect(prefix).not.toHaveBeenCalled();
+    expect(view.rootRangesDisposable).toBeNull();
+    expect(view._magicDecoration).toBeNull();
+    expect(editor.getText()).toBe("\n\n%%html\n<b>source</b>\n");
+  });
+
+  it("pauses magic analysis and decorations for None and resumes with the source intact", async () => {
+    const editor = mount("%%html\n<b>source</b>\n");
+    await settle(editor);
+    const grammar = editor.getGrammar();
+    view.props.onLanguageChange = (languageId) => {
+      view.props.cell.metadata = languageId ? { vscode: { languageId } } : {};
+    };
+    const prefix = spyOn(view._magicPrefix, "get").and.callThrough();
+    lumine.grammars.assignGrammar(editor, lumine.grammars.nullGrammar);
+    expect(view._magicDecoration).toBeNull();
+    expect(view.rootRangesDisposable).toBeNull();
+    const source = "\n\n%%html\n<b>changed</b>\n";
+    editor.setText(source);
+    view.refreshCellMagic();
+    expect(prefix).not.toHaveBeenCalled();
+    expect(editor.getGrammar()).toBe(lumine.grammars.nullGrammar);
+
+    lumine.grammars.assignGrammar(editor, grammar);
+    await settle(editor);
+    expect(prefix).toHaveBeenCalled();
+    expect(view._magicDecoration).not.toBeNull();
+    expect(view.rootRangesDisposable).not.toBeNull();
+    expect(editor.getText()).toBe(source);
+  });
+
   it("does not interpret a later magic or a magic in a non-Python notebook", async () => {
     const editor = mount("# comment\n%%bash\nprintf 'ok'\n");
     await settle(editor);
