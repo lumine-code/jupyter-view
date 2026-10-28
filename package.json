@@ -27,7 +27,9 @@
     "language-json",
     "language-python",
     "language-shellscript",
-    "language-text"
+    "language-text",
+    "linter",
+    "spell-check"
   ],
   "main": "./lib/main",
   "files": [

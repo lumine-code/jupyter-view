@@ -369,12 +369,10 @@ class CellView {
     // shares words across cells and open documents.
     this.editorRegistryDisposable = lumine.textEditors.add(this.editor, { role: "fragment" });
 
-    // Render-only linter registration: no provider ever lints a cell editor
-    // (the notebook is checked through the source editor and the language
-    // servers), but its buffer needs the linter's marker layers so projected
-    // diagnostics draw squiggles and answer hover inside the cell.
+    // Markdown prose is checked in its decoded editor buffer. Code and raw
+    // cells only render diagnostics from the notebook's source and servers.
     this.linterRegistration = require("./linter-editors").addLinterEditor(this.editor, {
-      lint: false,
+      lint: cell.type === "markdown",
     });
 
     // Cell editors aren't workspace pane items, so autocomplete has to be
