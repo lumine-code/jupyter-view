@@ -2,6 +2,8 @@
 
 Open and edit Jupyter notebooks.
 
+The Metadata panel shows the current notebook format, kernel, language and cell counts, along with its backing JSON source properties. Values follow unsaved document changes.
+
 ## Features
 
 - **Notebook editing**: open and edit `.ipynb` files with command/edit modes and keyboard-driven navigation; preserve UTF-8 source and LF or CRLF on save.
@@ -13,8 +15,6 @@ Open and edit Jupyter notebooks.
 - **Editor integrations**: search and replace cell source, expose linter diagnostics and navigation headings, and show selection and diagnostics on the scrollbar.
 - **Source and export**: open notebooks as plain JSON from the notebook or tree view, and export Python scripts or HTML.
 - **MCP automation**: let connected assistants read, create, open, edit and save live notebooks, with bounded output reads, revision guards, retry-safe edits and cancellable change waits.
-
-The Metadata panel shows the current notebook format, kernel, language and cell counts, along with its backing JSON source properties. Values follow unsaved document changes.
 
 ![Basedpyright underlines a type error inside a notebook cell and explains it in a hover.](.github/demo.png)
 
