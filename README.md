@@ -16,6 +16,8 @@ Open and edit Jupyter notebooks.
 
 ![Basedpyright underlines a type error inside a notebook cell and explains it in a hover.](.github/demo.png)
 
+The Metadata panel shows the current notebook format, kernel, language and cell counts, along with its backing JSON source properties. Values follow unsaved document changes.
+
 ## Installation
 
 To install `jupyter-view` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/jupyter-view`.
