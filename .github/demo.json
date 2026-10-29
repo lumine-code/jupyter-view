@@ -1,9 +1,9 @@
 {
   "title": "jupyter-view",
   "description": "Basedpyright underlines a type error inside a notebook cell and explains it in a hover.",
-  "recordedOn": "2026-10-17",
-  "sourceRevision": "f4d57ccfd9c4047fc33cbe16fa917d020676d413",
-  "themeSourceRevision": "9e9320170ef7426dfbee67f53b02cce39502e3a4",
+  "recordedOn": "2026-10-29",
+  "sourceRevision": "4fc5fe9bc2a222be942e1b3a1f82c7b667377e34",
+  "themeSourceRevision": "543b6786cc6eed20334c381eb322fc06e00a67b0",
   "mode": "normal",
   "fontSettings": "default",
   "scenario": "demo.js",
@@ -11,8 +11,8 @@
   "environment": {
     "platform": "win32",
     "arch": "x64",
-    "electron": "44.9.0",
-    "chrome": "152.0.7977.167",
+    "electron": "45.0.0",
+    "chrome": "156.0.8078.48",
     "devicePixelRatio": 1,
     "locale": "en-GB",
     "fontFamily": "Fira Code, Menlo, DejaVu Sans Mono, Consolas, monospace",
@@ -24,67 +24,67 @@
   "privacy": { "version": 1, "location": "neutral", "textChecked": true },
   "sources": {
     "editor": {
-      "revision": "4c8ed3293222b11c4c822ee2b1a8b54489f0f9d6",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      "revision": "2d5f98a65f492e9c844e3535cfac87b5cd1f7729",
+      "dirty": true,
+      "workingTreeHash": "4ec801a311bf417f3bcd681b09e469f5ed287fbcbb882bbec5d38eb697767dfa"
     },
     "package": {
-      "revision": "f4d57ccfd9c4047fc33cbe16fa917d020676d413",
+      "revision": "4fc5fe9bc2a222be942e1b3a1f82c7b667377e34",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "jupyter-view": {
-      "revision": "f4d57ccfd9c4047fc33cbe16fa917d020676d413",
+      "revision": "4fc5fe9bc2a222be942e1b3a1f82c7b667377e34",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "documentation-view": {
-      "revision": "b3cd21aa39d0385c4c045d0ea7f7cea38ed3bd4d",
+      "revision": "e514157379be8dda99bb2cb03c976a05f2f168f8",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "hover": {
-      "revision": "ebffd6e9b8580bff5337e08dc0279f24ea9b7bd9",
+      "revision": "e4ead84e6d83807a62206ed9052f700a0490eb8a",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "ide": {
-      "revision": "b305df1d2af026cba795700e29e284b90959a968",
+      "revision": "ecc4be18fd24f23c42d61cbb400a95e183fa8817",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "ide-basedpyright": {
-      "revision": "7e28bdcf4b0c9e39ff0d22f47c5a9c82dc3e4b66",
+      "revision": "bf6a8bb8e8db34bd044a42d1d0677570e03c3eb4",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "jupyter-cells": {
-      "revision": "d2dda2b06798c9ff9001b1492b2766cceee0c5d4",
+      "revision": "6adca3701d89f0b206834503a92596bb749cce39",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "jupyter-repl": {
-      "revision": "388d56ee73e00e7815e947081aa16a0b1e29af0a",
+      "revision": "a94a0eb78f1ce80bcdaa9897f93eb2a603703ab5",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "language-python": {
-      "revision": "cad3cc51c11fc557f2c7b2100c54a29730378c63",
+      "revision": "413b30e96e3bb63714958c3e3edeca338b0551aa",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "linter": {
-      "revision": "73355d0a8caaebe43904fdb1dbf0dd03f02a2994",
+      "revision": "e5a3f372cdfeada5357313a9b745cf1f27dd8843",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "marker": {
-      "revision": "56b7b100f9b8b1e532645399f14fe662795d0861",
+      "revision": "7f788e69e72ce8c3eefd8b3ef251e43c18a61018",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "one-theme": {
-      "revision": "9e9320170ef7426dfbee67f53b02cce39502e3a4",
+      "revision": "543b6786cc6eed20334c381eb322fc06e00a67b0",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     }
@@ -105,7 +105,7 @@
       "label": "Basedpyright underlines a type error inside a notebook cell and explains it in a hover.",
       "width": 1200,
       "height": 950,
-      "sha256": "6afb5abf0cd70ab0554a254e6aa519817939806b90918802f5dbc89523d96059"
+      "sha256": "86ad86e86d82080422cd7108319679c271ce58c03f08ec1ebfa63a9d0e1aee01"
     }
   ]
 }

@@ -14,9 +14,10 @@ Open and edit Jupyter notebooks.
 - **Source and export**: open notebooks as plain JSON from the notebook or tree view, and export Python scripts or HTML.
 - **MCP automation**: let connected assistants read, create, open, edit and save live notebooks, with bounded output reads, revision guards, retry-safe edits and cancellable change waits.
 
-![Basedpyright underlines a type error inside a notebook cell and explains it in a hover.](.github/demo.png)
 
 The Metadata panel shows the current notebook format, kernel, language and cell counts, along with its backing JSON source properties. Values follow unsaved document changes.
+
+![Basedpyright underlines a type error inside a notebook cell and explains it in a hover.](.github/demo.png)
 
 ## Installation
 
