@@ -35,10 +35,9 @@ describe("Notebook scrollbar measurement across windows", () => {
         this.element.remove();
       }
     }
-    const source = spyOn(window, "ResizeObserver").and.callThrough();
     const NotebookScrollmap = require("../lib/scrollmap-integration");
     map = new NotebookScrollmap(editor, Widget);
-    const observer = source.calls.mostRecent().returnValue;
+    const observer = map.resizeObserver;
     const disconnect = spyOn(observer, "disconnect").and.callThrough();
     await lumine.workspace.movePaneItem(item, {
       targetPane: extra.getEditorContainer().getActivePane(),
