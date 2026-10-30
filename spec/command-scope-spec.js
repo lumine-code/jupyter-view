@@ -217,6 +217,21 @@ describe("jupyter-view notebook resolution", () => {
     return target;
   }
 
+  it("reads menu choice state from the clicked cell without selecting it", () => {
+    const first = dispatched.document.getCell(0);
+    const second = dispatched.document.insertCell(1);
+    first.setType("code");
+    second.setType("markdown");
+    dispatched.setActiveCell(0);
+    const target = cellTarget(1);
+    const state = (command) => lumine.commands.getCommandState(command, { target });
+
+    expect(state("jupyter-view:change-cell-to-code")).toEqual({ type: "radio", checked: false });
+    expect(state("jupyter-view:change-cell-to-markdown")).toEqual({ type: "radio", checked: true });
+    expect(state("jupyter-view:toggle-cell-output")).toBeNull();
+    expect(dispatched.activeCellIndex).toBe(0);
+  });
+
   it("deletes the context cell instead of a different active cell", () => {
     const first = dispatched.document.getCell(0);
     const second = dispatched.document.insertCell(1);
