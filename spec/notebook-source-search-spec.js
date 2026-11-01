@@ -74,6 +74,15 @@ describe("snapshot notebook search", () => {
 
   it("atomically replaces every cell with exact mounted markers and coherent model events", async () => {
     setup(["x gap x", "x tail"]);
+    const firstBuffer = editors[0].getBuffer();
+    const tracked = [];
+    const layer = firstBuffer.addMarkerLayer({
+      trackRanges(entries) {
+        tracked.push(firstBuffer.getText());
+        return entries.map(({ id }) => ({ id, range: firstBuffer.getRange() }));
+      },
+    });
+    layer.markRange(firstBuffer.getRange(), { invalidate: "never" });
     const marker = editors[0].getBuffer().markRange(
       [
         [0, 2],
@@ -89,6 +98,7 @@ describe("snapshot notebook search", () => {
       );
     await adapter.search(query(/x/g));
     expect(await adapter.replaceAll("long")).toBe(3);
+    expect(tracked).toEqual(["long gap x", "long gap long"]);
     expect(seen).toEqual([["long gap long", "long tail"]]);
     expect(marker.getRange().serialize()).toEqual([
       [0, 5],
