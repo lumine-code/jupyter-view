@@ -7,6 +7,7 @@ const etch = require("@lumine-code/etch");
 etch.setScheduler(lumine.views);
 const { CompositeDisposable, Disposable } = require("lumine");
 const CellView = require("./cell-view");
+const notebookIcon = require("./notebook-icon");
 const PresentationFrames = require("./presentation-frames");
 const { setTimeout: scheduleFocusReset, clearTimeout: cancelFocusReset } = require("node:timers");
 const { hasCellDrag, inspectCellDrag, readCellDrag } = require("./cell-drag");
@@ -142,13 +143,13 @@ class NotebookView {
   // Buttons that only dispatch a command, so the toolbar can list them.
   commandButtons() {
     return [
-      ["jupyter-view:run-cell", "icon-playback-play", "Run Cell"],
-      ["jupyter-view:run-cell-and-move-down", "icon-jump-down", "Run Cell and Move Down"],
-      ["jupyter-view:run-all", "icon-playback-fast-forward", "Run All Cells"],
+      ["jupyter-view:run-cell", "run", "Run Cell"],
+      ["jupyter-view:run-cell-and-move-down", "run-next", "Run Cell and Move Down"],
+      ["jupyter-view:run-all", "run-all", "Run All Cells"],
       null,
-      ["jupyter-repl:interrupt-kernel", "icon-stop", "Interrupt Kernel"],
-      ["jupyter-repl:restart-kernel", "icon-sync", "Restart Kernel"],
-      ["jupyter-repl:shutdown-kernel", "icon-circle-slash", "Shutdown Kernel"],
+      ["jupyter-repl:interrupt-kernel", "interrupt", "Interrupt Kernel"],
+      ["jupyter-repl:restart-kernel", "restart", "Restart Kernel"],
+      ["jupyter-repl:shutdown-kernel", "shutdown", "Shutdown Kernel"],
     ];
   }
 
@@ -160,19 +161,14 @@ class NotebookView {
       // plain direction. Both are the weight of the run and delete glyphs
       // beside them — a plain arrow reads as "move" and the chevrons were the
       // lightest marks in the row.
-      ["icon-move-up", "Insert Cell Above", "jupyter-view:insert-cell-above", "insertCellAbove"],
-      ["icon-move-down", "Insert Cell Below", "jupyter-view:insert-cell-below", "insertCellBelow"],
-      ["icon-triangle-up", "Move Cell Up", "jupyter-view:move-cell-up", "moveCellUp"],
-      ["icon-triangle-down", "Move Cell Down", "jupyter-view:move-cell-down", "moveCellDown"],
-      ["icon-trashcan", "Delete Cell", "jupyter-view:delete-cell", "deleteCell"],
+      ["insert-above", "Insert Cell Above", "jupyter-view:insert-cell-above", "insertCellAbove"],
+      ["insert-below", "Insert Cell Below", "jupyter-view:insert-cell-below", "insertCellBelow"],
+      ["move-up", "Move Cell Up", "jupyter-view:move-cell-up", "moveCellUp"],
+      ["move-down", "Move Cell Down", "jupyter-view:move-cell-down", "moveCellDown"],
+      ["delete", "Delete Cell", "jupyter-view:delete-cell", "deleteCell"],
       null,
-      ["icon-remove-close", "Clear Cell Output", "jupyter-view:clear-output", "clearOutput"],
-      [
-        "icon-primitive-square",
-        "Clear All Outputs",
-        "jupyter-view:clear-all-outputs",
-        "clearAllOutputs",
-      ],
+      ["clear", "Clear Cell Output", "jupyter-view:clear-output", "clearOutput"],
+      ["clear-all", "Clear All Outputs", "jupyter-view:clear-all-outputs", "clearAllOutputs"],
     ];
   }
 
@@ -216,10 +212,13 @@ class NotebookView {
             entry ? (
               <button
                 key={entry[0]}
-                className={`btn btn-sm icon ${entry[1]}`}
+                className="btn btn-sm jupyter-action-button"
+                attributes={{ "aria-label": entry[2] }}
                 ref={`command-${entry[0]}`}
                 onClick={this.dispatchCommand(entry[0])}
-              />
+              >
+                {notebookIcon(entry[1])}
+              </button>
             ) : (
               <div key={`sep-command-${index}`} className="toolbar-separator" />
             ),
@@ -229,10 +228,13 @@ class NotebookView {
             entry ? (
               <button
                 key={entry[3]}
-                className={`btn btn-sm icon ${entry[0]}`}
+                className="btn btn-sm jupyter-action-button"
+                attributes={{ "aria-label": entry[1] }}
                 ref={`editor-${entry[3]}`}
                 onClick={this.callEditor(entry[3])}
-              />
+              >
+                {notebookIcon(entry[0])}
+              </button>
             ) : (
               <div key={`sep-editor-${index}`} className="toolbar-separator" />
             ),

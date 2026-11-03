@@ -6,6 +6,7 @@
 const etch = require("@lumine-code/etch");
 const { CompositeDisposable } = require("lumine");
 const OutputView = require("./output-view");
+const notebookIcon = require("./notebook-icon");
 const { renderMarkdown } = require("./markdown");
 const {
   getGrammarScopesForLanguage,
@@ -241,23 +242,32 @@ class CellView {
       <div className="cell-actions">
         {isCode ? (
           <button
-            className="btn btn-xs icon icon-playback-play"
+            className="btn btn-xs jupyter-action-button"
+            attributes={{ "aria-label": "Run Cell" }}
             ref="runButton"
             onClick={this.runCell}
-          />
+          >
+            {notebookIcon("run")}
+          </button>
         ) : null}
         {isCode ? (
           <button
-            className="btn btn-xs icon icon-remove-close"
+            className="btn btn-xs jupyter-action-button"
+            attributes={{ "aria-label": "Clear Output" }}
             ref="clearButton"
             onClick={this.clearOutput}
-          />
+          >
+            {notebookIcon("clear")}
+          </button>
         ) : null}
         <button
-          className="btn btn-xs icon icon-trashcan"
+          className="btn btn-xs jupyter-action-button"
+          attributes={{ "aria-label": "Delete Cell" }}
           ref="deleteButton"
           onClick={this.deleteCell}
-        />
+        >
+          {notebookIcon("delete")}
+        </button>
       </div>
     );
   }
