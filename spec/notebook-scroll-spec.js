@@ -57,4 +57,31 @@ describe("notebook editor scrolling", () => {
     reveal(0, [0, 100]);
     expect(container.scrollTo).toHaveBeenCalledOnceWith({ top: 80, behavior: "instant" });
   });
+
+  it("reveals an editor row above an overflowing horizontal overlay", () => {
+    view._scrollEndInset = 10;
+    reveal(9, [0, 100]);
+    expect(container.scrollTo).toHaveBeenCalledOnceWith({ top: 110, behavior: "instant" });
+  });
+
+  it("reveals a whole cell above an overflowing horizontal overlay", () => {
+    view._scrollEndInset = 10;
+    view.refs["cell-cell"].element = {
+      getBoundingClientRect: () => ({ top: 160, bottom: 200 }),
+    };
+    view.scrollToCell(0);
+    expect(container.scrollTo).toHaveBeenCalledOnceWith({ top: 110, behavior: "smooth" });
+  });
+
+  it("uses the visible page height without compensating a gutter twice", () => {
+    const scroll = spyOn(view, "_smoothScrollBy");
+    lumine.config.set("jupyter-view.notebook.scrollPos", 1);
+    view._scrollEndInset = 10;
+    view.scrollDown();
+    expect(scroll).toHaveBeenCalledWith(190);
+    view._scrollEndInset = 0;
+    container.clientHeight = 190;
+    view.scrollUp();
+    expect(scroll).toHaveBeenCalledWith(-190);
+  });
 });

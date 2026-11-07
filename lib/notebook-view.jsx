@@ -65,6 +65,8 @@ class NotebookView {
     this._pendingScrollY = 0;
     this._scrollAnimId = null;
     this._observedContainer = null;
+    this._scrollEndInset = 0;
+    this._scrollClientHeight = null;
     this._dragContainer = null;
     this._dragWindow = null;
     this.scrollCallbacks = new Set();
@@ -137,7 +139,8 @@ class NotebookView {
     this.setupCellDragAndDrop();
     this._resizeObserver.disconnect();
     this._resizeObserver = new document.defaultView.ResizeObserver(() => this.applyScrollPastEnd());
-    if (this.cellsContainer) this._resizeObserver.observe(this.cellsContainer);
+    if (this.cellsContainer)
+      this._resizeObserver.observe(this.cellsContainer, { box: "border-box" });
   }
 
   // Buttons that only dispatch a command, so the toolbar can list them.
@@ -359,9 +362,21 @@ class NotebookView {
     const container = this.cellsContainer;
     if (container && this._observedContainer !== container) {
       if (this._observedContainer) this._resizeObserver?.unobserve?.(this._observedContainer);
+      this._scrollGeometrySubscription?.dispose();
+      this._scrollEndInset = 0;
+      this._scrollClientHeight = null;
       this._observedContainer = container;
+      this._scrollGeometrySubscription = lumine.scrollbars.observe(container, (geometry) => {
+        const heightChanged =
+          this._scrollClientHeight != null && this._scrollClientHeight !== geometry.viewportHeight;
+        this._scrollClientHeight = geometry.viewportHeight;
+        this._scrollEndInset = geometry.scrollEndInset || 0;
+        // Native gutters can change clientHeight without changing the border
+        // box. A managed overlay padding probe leaves this height unchanged.
+        if (heightChanged) this.applyScrollPastEnd();
+      });
       this.applyScrollPastEnd();
-      if (this._resizeObserver) this._resizeObserver.observe(container);
+      if (this._resizeObserver) this._resizeObserver.observe(container, { box: "border-box" });
       this.setupCellDragAndDrop();
     }
   }
@@ -406,7 +421,7 @@ class NotebookView {
 
       // Calculate distance from edges
       const distFromTop = mouseY - rect.top;
-      const distFromBottom = rect.bottom - mouseY;
+      const distFromBottom = rect.top + this.scrollViewportHeight() - mouseY;
 
       if (distFromTop < SCROLL_ZONE) {
         // Near top - scroll up (negative speed)
@@ -1109,7 +1124,7 @@ class NotebookView {
     const containerRect = this.cellsContainer.getBoundingClientRect();
 
     // Mirror Lumine's getVerticalAutoscrollMargin() logic
-    const containerHeight = this.cellsContainer.clientHeight;
+    const containerHeight = this.scrollViewportHeight();
     const maxMarginLines = Math.floor((containerHeight / lineHeight - 1) / 2);
     const margin = Math.max(0, Math.min(editor.verticalScrollMargin, maxMarginLines)) * lineHeight;
 
@@ -1157,8 +1172,9 @@ class NotebookView {
     let newScrollTop = null;
     if (cellRect.top < containerRect.top) {
       newScrollTop = container.scrollTop + (cellRect.top - containerRect.top);
-    } else if (cellRect.bottom > containerRect.bottom) {
-      newScrollTop = container.scrollTop + (cellRect.bottom - containerRect.bottom);
+    } else if (cellRect.bottom > containerRect.top + this.scrollViewportHeight()) {
+      newScrollTop =
+        container.scrollTop + (cellRect.bottom - containerRect.top - this.scrollViewportHeight());
     }
 
     if (newScrollTop !== null) {
@@ -1174,16 +1190,20 @@ class NotebookView {
     return this.draggingCellId;
   }
 
+  scrollViewportHeight() {
+    return Math.max(0, this.cellsContainer.clientHeight - (this._scrollEndInset || 0));
+  }
+
   scrollUp() {
     if (!this.cellsContainer) return;
     const scrollPos = lumine.config.get("jupyter-view.notebook.scrollPos") ?? 1;
-    this._smoothScrollBy(-this.cellsContainer.offsetHeight * scrollPos);
+    this._smoothScrollBy(-this.scrollViewportHeight() * scrollPos);
   }
 
   scrollDown() {
     if (!this.cellsContainer) return;
     const scrollPos = lumine.config.get("jupyter-view.notebook.scrollPos") ?? 1;
-    this._smoothScrollBy(+this.cellsContainer.offsetHeight * scrollPos);
+    this._smoothScrollBy(+this.scrollViewportHeight() * scrollPos);
   }
 
   _smoothScrollBy(deltaY) {
@@ -1266,6 +1286,8 @@ class NotebookView {
     }
 
     this._observedContainer = null;
+    this._scrollGeometrySubscription?.dispose();
+    this._scrollGeometrySubscription = null;
     this._frameParticipant.dispose();
     this._frames.destroy();
     // The cell views are children of this component, so they go with it — and
