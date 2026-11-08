@@ -5,6 +5,7 @@ describe("notebook editor scrolling", () => {
   let view, editor, container;
 
   beforeEach(() => {
+    spyOn(lumine.scrollbars, "reveal");
     container = {
       clientHeight: 200,
       scrollTop: 100,
@@ -30,6 +31,22 @@ describe("notebook editor scrolling", () => {
   it("keeps nearest requests still while the target is visible", () => {
     reveal(8, [0, 100]);
     expect(container.scrollTo).not.toHaveBeenCalled();
+    expect(lumine.scrollbars.reveal).toHaveBeenCalledOnceWith(container);
+  });
+
+  it("reports handled previous-cell navigation at the first cell without moving it", () => {
+    view.props.editor = { setActiveCell: jasmine.createSpy("active cell") };
+    view.props.activeCellIndex = 0;
+    view.focusPreviousCell();
+    expect(lumine.scrollbars.reveal).toHaveBeenCalledOnceWith(container);
+    expect(view.props.editor.setActiveCell).not.toHaveBeenCalled();
+    expect(container.scrollTo).not.toHaveBeenCalled();
+  });
+
+  it("reports a page navigation request before its animation can move a boundary", () => {
+    spyOn(view, "_smoothScrollBy");
+    view.scrollDown();
+    expect(lumine.scrollbars.reveal).toHaveBeenCalledOnceWith(container);
   });
 
   it("lands a downward navigation at the configured lower bound", () => {

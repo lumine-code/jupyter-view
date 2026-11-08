@@ -957,6 +957,7 @@ class NotebookView {
   extendSelectionByStep(direction) {
     const { editor, cells, activeCellIndex } = this.props;
     if (!editor || !cells || cells.length === 0) return;
+    this.revealScrollbars();
 
     const nextIndex = activeCellIndex + direction;
     if (nextIndex < 0 || nextIndex >= cells.length) return;
@@ -1067,6 +1068,7 @@ class NotebookView {
 
   focusPreviousCell() {
     const { editor, activeCellIndex } = this.props;
+    if (editor && this.props.cells?.length) this.revealScrollbars();
     if (editor && activeCellIndex > 0) {
       this._selectionAnchor = null;
       this.clearSelection();
@@ -1077,6 +1079,7 @@ class NotebookView {
 
   focusNextCell() {
     const { editor, activeCellIndex, cells } = this.props;
+    if (editor && cells?.length) this.revealScrollbars();
     if (editor && cells && activeCellIndex < cells.length - 1) {
       this._selectionAnchor = null;
       this.clearSelection();
@@ -1107,6 +1110,7 @@ class NotebookView {
 
   scrollToCursor(index, editor, options = { mode: "zone" }) {
     if (!this.cellsContainer || !this.props.cells?.[index]) return;
+    this.revealScrollbars();
     editor.scrollToCursorPosition(options);
   }
 
@@ -1119,6 +1123,7 @@ class NotebookView {
 
     const lineHeight = editor.getLineHeightInPixels();
     if (!lineHeight) return;
+    this.revealScrollbars();
 
     const editorRect = cellView.editorElement.getBoundingClientRect();
     const containerRect = this.cellsContainer.getBoundingClientRect();
@@ -1164,6 +1169,7 @@ class NotebookView {
     if (!cells || !cells[index] || !this.cellsContainer) return;
     const cellView = this.cellViews.get(cells[index].id);
     if (!cellView || !cellView.element) return;
+    this.revealScrollbars();
 
     const container = this.cellsContainer;
     const cellRect = cellView.element.getBoundingClientRect();
@@ -1194,14 +1200,20 @@ class NotebookView {
     return Math.max(0, this.cellsContainer.clientHeight - (this._scrollEndInset || 0));
   }
 
+  revealScrollbars() {
+    if (this.cellsContainer) lumine.scrollbars.reveal(this.cellsContainer);
+  }
+
   scrollUp() {
     if (!this.cellsContainer) return;
+    this.revealScrollbars();
     const scrollPos = lumine.config.get("jupyter-view.notebook.scrollPos") ?? 1;
     this._smoothScrollBy(-this.scrollViewportHeight() * scrollPos);
   }
 
   scrollDown() {
     if (!this.cellsContainer) return;
+    this.revealScrollbars();
     const scrollPos = lumine.config.get("jupyter-view.notebook.scrollPos") ?? 1;
     this._smoothScrollBy(+this.scrollViewportHeight() * scrollPos);
   }
