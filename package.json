@@ -130,7 +130,7 @@
     }
   },
   "dependencies": {
-    "@lumine-code/etch": "github:lumine-code/etch#9f76bc0b47e49e645c25545d78ef439da3e081ee",
+    "@lumine-code/etch": "github:lumine-code/etch#52c94d488a7996ef811cb5848a68a33719e997e6",
     "anser": "^2.3.5"
   },
   "configSchema": {
