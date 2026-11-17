@@ -1,6 +1,7 @@
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const { setTimeout: delay } = require("node:timers/promises");
 const { TextBuffer } = require("lumine");
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
@@ -40,6 +41,12 @@ describe("notebook persistence and ownership", () => {
   let directory, documents, editors, registries;
 
   beforeEach(async () => {
+    // Grammar loading and notebook fingerprinting can yield to browser timers.
+    jasmine.useRealClock();
+    directory = null;
+    documents = [];
+    editors = [];
+    registries = [];
     for (const name of ["language-json", "language-python", "language-gfm", "language-text"]) {
       const grammarPackage = await lumine.packages.activatePackage(name);
       await grammarPackage.resourceLoadPromise;
@@ -53,9 +60,6 @@ describe("notebook persistence and ownership", () => {
     directory = await fs.promises.realpath(
       fs.mkdtempSync(path.join(os.tmpdir(), "notebook-reliability-")),
     );
-    documents = [];
-    editors = [];
-    registries = [];
   });
 
   afterEach(async () => {
@@ -65,12 +69,13 @@ describe("notebook persistence and ownership", () => {
     await lumine.fileWatchClient.settlePendingTeardown();
     // Native watcher teardown is already settled above. Windows can still hold
     // directory entries briefly while antivirus or indexing releases the file.
-    await fs.promises.rm(directory, {
-      recursive: true,
-      force: true,
-      maxRetries: 5,
-      retryDelay: 100,
-    });
+    if (directory)
+      await fs.promises.rm(directory, {
+        recursive: true,
+        force: true,
+        maxRetries: 5,
+        retryDelay: 100,
+      });
   });
 
   async function documentFor(data = notebook(), fileName = "notebook.ipynb") {
@@ -138,7 +143,7 @@ describe("notebook persistence and ownership", () => {
     pending[0].release();
     expect(await first).toBe(true);
     await waitFor(() => pending.length === 2);
-    window.advanceClock(600);
+    await delay(600);
     expect(document._isSaving).toBe(true);
     pending[1].release();
     const secondSaved = await second;
@@ -304,14 +309,14 @@ describe("notebook persistence and ownership", () => {
     cell.destroy();
   });
 
-  it("cancels cell runtime timers on destruction", () => {
+  it("cancels cell runtime timers on destruction", async () => {
     const cell = new CellModel({ id: "timers" });
     const changed = jasmine.createSpy("changed");
     cell.onDidChange(changed);
     cell.setRunning();
     cell.scheduleClearOutputs();
     cell.destroy();
-    window.advanceClock(100);
+    await delay(100);
     expect(cell._runningTimer).toBeNull();
     expect(cell._pendingClearTimer).toBeNull();
     expect(cell.status).toBeNull();
@@ -333,7 +338,7 @@ describe("notebook persistence and ownership", () => {
     const clear = spyOn(cell, "clearRunning").and.callThrough();
     first.beginTargetExecution(firstTarget);
     second.beginTargetExecution(secondTarget);
-    window.advanceClock(60);
+    await waitFor(() => cell.status === "running");
     first.finishTargetExecution(firstTarget);
     expect(clear).not.toHaveBeenCalled();
     expect(cell.status).toBe("running");
