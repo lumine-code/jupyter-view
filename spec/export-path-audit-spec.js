@@ -5,6 +5,7 @@ const path = require("node:path");
 describe("notebook export destinations", () => {
   let main, directory, editors;
   beforeEach(async () => {
+    jasmine.useRealClock();
     for (const method of ["openPath", "openExternal", "openApplication", "showItemInFolder"])
       spyOn(lumine.shell, method).and.resolveTo();
     spyOn(lumine.application, "openWindow").and.resolveTo();
