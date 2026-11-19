@@ -90,6 +90,7 @@ class EditorHost {
 class CellView {
   constructor(props) {
     this.props = props;
+    this.contentDeferred = Boolean(props.deferContent);
     this.editorElement = null;
     this.editor = null;
     this._lastKnownSource = cellSource.forCell(props.cell);
@@ -102,10 +103,14 @@ class CellView {
     this._tooltipTargets = new WeakSet();
 
     etch.initialize(this);
-    this.setupEditor();
-    // The editor is built after the first render, so the host has to be told
-    // about it once it exists.
-    etch.updateSync(this);
+    if (this.contentDeferred) {
+      props.notebookView.deferCell(this);
+    } else {
+      this.setupEditor();
+      // The editor is built after the first render, so the host has to be told
+      // about it once it exists.
+      etch.updateSync(this);
+    }
 
     this._maxInputHeightDisposable = lumine.config.observe("jupyter-view.input.maxHeight", () => {
       etch.update(this);
@@ -224,16 +229,38 @@ class CellView {
     return (
       <div className="cell-input" style={style}>
         {this.showsEditor ? (
-          <EditorHost ref="editorHost" editorElement={this.editorElement} />
+          this.contentDeferred ? (
+            <div style={{ height: `${this.estimatedEditorHeight()}px` }} />
+          ) : (
+            <EditorHost ref="editorHost" editorElement={this.editorElement} />
+          )
         ) : (
           <div
             className="markdown-rendered"
-            innerHTML={renderMarkdown(cell.source)}
+            innerHTML={this.renderedMarkdown(cell)}
             onClick={this.handleMarkdownClick}
           />
         )}
       </div>
     );
+  }
+
+  renderedMarkdown(cell) {
+    const source = cellSource.forCell(cell);
+    if (!this.markdown || !cellSource.equal(this.markdown.source, source)) {
+      this.markdown = { source, html: renderMarkdown(source.toString()) };
+    }
+    return this.markdown.html;
+  }
+
+  estimatedEditorHeight() {
+    const source = cellSource.forCell(this.props.cell);
+    const max = lumine.config.get("jupyter-view.input.maxHeight");
+    if (source.length >= 32 * 1024 * 1024 || source.lineCount >= 300000) return max || 400;
+    const fontSize = lumine.config.get("editor.fontSize");
+    const lineHeight = lumine.config.get("editor.lineHeight");
+    const height = source.lineCount * Math.max(1, Math.round(fontSize * lineHeight) || 21);
+    return max > 0 ? Math.min(height, max) : height;
   }
 
   renderActions() {
@@ -273,7 +300,13 @@ class CellView {
   }
 
   render() {
-    const outputs = this.displayableOutputs();
+    const cell = this.props.cell;
+    const outputs = this.contentDeferred ? [] : this.displayableOutputs();
+    const outputMaxHeight = lumine.config.get("jupyter-view.output.maxHeight");
+    const deferredOutputCount =
+      this.contentDeferred && cell.type === "code" && cell.outputVisible !== false
+        ? cell.outputs?.length || 0
+        : 0;
 
     return (
       <div
@@ -295,9 +328,15 @@ class CellView {
                 ref="outputView"
                 outputs={outputs}
                 editor={this.props.editor}
-                maxHeight={lumine.config.get("jupyter-view.output.maxHeight")}
+                maxHeight={outputMaxHeight}
               />
             </div>
+          ) : null}
+          {deferredOutputCount ? (
+            <div
+              className="cell-output-container"
+              style={{ height: `${Math.min(outputMaxHeight || 1000, deferredOutputCount * 64)}px` }}
+            />
           ) : null}
         </div>
         {this.renderActions()}
@@ -336,11 +375,24 @@ class CellView {
     return this.refs.editorHost ? this.refs.editorHost.element : null;
   }
 
+  allowContent() {
+    if (!this.contentDeferred) return false;
+    this.contentDeferred = false;
+    this.props.notebookView.stopDeferringCell(this);
+    return true;
+  }
+
+  materialize() {
+    if (!this.allowContent()) return;
+    this.setupEditor();
+    etch.updateSync(this);
+  }
+
   setupEditor() {
     const { cell, active, mode } = this.props;
 
     // Don't set up editor for rendered markdown
-    if (this.isMarkdownRendered(cell, active, mode)) {
+    if (this.contentDeferred || this.isMarkdownRendered(cell, active, mode)) {
       return;
     }
 
@@ -775,9 +827,10 @@ class CellView {
     this.props.editor?.document?.setPendingCellSourceChange?.(this, pending);
   }
 
-  update(props) {
+  update(props, { sync = false } = {}) {
     const oldProps = this.props;
     this.props = { ...this.props, ...props };
+    const materializing = (!this.props.deferContent || this.props.active) && this.allowContent();
 
     // The editor is rebuilt only when the cell stops (or starts) being one:
     // its type changed, or markdown switched between rendered and editable.
@@ -786,7 +839,7 @@ class CellView {
     const wasRendered = this.isMarkdownRendered(oldProps.cell, oldProps.active, oldProps.mode);
     const willBeRendered = this.isMarkdownRendered(props.cell, props.active, props.mode);
 
-    if (typeChanged || wasRendered !== willBeRendered) {
+    if (materializing || typeChanged || wasRendered !== willBeRendered) {
       this.destroyEditor();
       this._lastKnownSource = cellSource.forCell(props.cell);
       this._lastKnownType = props.cell ? props.cell.type : "code";
@@ -794,7 +847,7 @@ class CellView {
       this._editorIsDirty = false;
       this._localChangeSourceRevision = null;
       this.setupEditor();
-      return etch.update(this);
+      return sync ? etch.updateSync(this) : etch.update(this);
     }
 
     // The source changed somewhere else — another editor on the same cell, or
@@ -818,7 +871,7 @@ class CellView {
 
     this.refreshCellMagic();
 
-    return etch.update(this);
+    return sync ? etch.updateSync(this) : etch.update(this);
   }
 
   _formatRunTime(ms) {
@@ -835,6 +888,7 @@ class CellView {
   }
 
   focus() {
+    this.materialize();
     if (this.editor && this.editorElement) {
       // Focus must happen in next frame to work reliably
       const requestFrame =
@@ -922,6 +976,7 @@ class CellView {
   }
 
   destroy() {
+    if (this.contentDeferred) this.props.notebookView.stopDeferringCell(this);
     this._tooltips.dispose();
     this._maxInputHeightDisposable?.dispose();
     this._maxOutputHeightDisposable?.dispose();

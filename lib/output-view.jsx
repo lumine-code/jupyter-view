@@ -84,11 +84,15 @@ function renderOutput(output, editor) {
 class OutputView {
   constructor(props) {
     this.props = props;
+    this.rendererRevision = 0;
     etch.initialize(this);
 
     // Re-render when the service arrives or goes away: a notebook restored at
     // startup can beat jupyter-repl's activation by a frame.
-    this.serviceSubscription = outputRenderer.onDidChange(() => etch.update(this));
+    this.serviceSubscription = outputRenderer.onDidChange(() => {
+      this.rendererRevision++;
+      etch.update(this);
+    });
 
     // Block image drag-and-drop from outputs (catches imgs embedded in
     // text/html outputs that don't go through the image MIME branch).
@@ -105,13 +109,14 @@ class OutputView {
       <div className="jupyter-output-container">
         <div className="jupyter-outputs" style={style}>
           {(outputs || []).map((output, index) => (
-            <div
+            <OutputEntry
               key={index}
-              className={`jupyter-output output-${output.output_type || "unknown"}`}
-              attributes={{ "data-output-index": String(index) }}
-            >
-              {renderOutput(output, this.props.editor)}
-            </div>
+              index={index}
+              output={output}
+              text={output.output_type === "stream" ? output.text : undefined}
+              editor={this.props.editor}
+              rendererRevision={this.rendererRevision}
+            />
           ))}
         </div>
       </div>
@@ -125,6 +130,43 @@ class OutputView {
 
   destroy() {
     this.serviceSubscription.dispose();
+    return etch.destroy(this);
+  }
+}
+
+class OutputEntry {
+  constructor(props) {
+    this.props = props;
+    etch.initialize(this);
+  }
+
+  render() {
+    const { index, output, editor } = this.props;
+    return (
+      <div
+        className={`jupyter-output output-${output.output_type || "unknown"}`}
+        attributes={{ "data-output-index": String(index) }}
+      >
+        {renderOutput(output, editor)}
+      </div>
+    );
+  }
+
+  update(props) {
+    const { output, text, editor, rendererRevision } = this.props;
+    this.props = props;
+    // A stream is merged in place. Other outputs are installed as whole records.
+    if (
+      props.output !== output ||
+      props.text !== text ||
+      props.editor !== editor ||
+      props.rendererRevision !== rendererRevision
+    ) {
+      return etch.update(this);
+    }
+  }
+
+  destroy() {
     return etch.destroy(this);
   }
 }

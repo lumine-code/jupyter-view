@@ -18,6 +18,7 @@ const CELL_TYPES = [
   { value: "markdown", label: "Markdown" },
   { value: "raw", label: "Raw" },
 ];
+const DEFERRED_CELL_THRESHOLD = 80;
 
 class CellTypeSelectBox {
   constructor(props) {
@@ -51,6 +52,8 @@ class NotebookView {
     this.props = props;
     this.mode = "command"; // 'command' or 'edit'
     this.selectedCells = new Set(); // Set of selected cell indices
+    this.styledSelection = new Set(); // Cell ids currently styled as selected.
+    this.showSelection = true;
     this._selectionAnchor = null; // Anchor index for range-extension (shift+arrow / shift+click)
     this.draggingCellId = null;
     this.draggingCellIds = new Set();
@@ -73,6 +76,7 @@ class NotebookView {
     this.selectionCallbacks = new Set();
     this._tooltips = new CompositeDisposable();
     this._tooltipTargets = new WeakSet();
+    this.deferredCells = new Map();
 
     etch.initialize(this);
     this._frames = new PresentationFrames(this.element);
@@ -141,6 +145,7 @@ class NotebookView {
     this._resizeObserver = new document.defaultView.ResizeObserver(() => this.applyScrollPastEnd());
     if (this.cellsContainer)
       this._resizeObserver.observe(this.cellsContainer, { box: "border-box" });
+    this.observeCellViewport();
   }
 
   // Buttons that only dispatch a command, so the toolbar can list them.
@@ -250,7 +255,9 @@ class NotebookView {
             onWheel={this.handleCellTypeWheel}
           />
           <div className="toolbar-separator" />
-          <span className="mode-indicator">{this.mode === "edit" ? "Edit" : "Command"}</span>
+          <span className="mode-indicator" ref="modeIndicator">
+            {this.mode === "edit" ? "Edit" : "Command"}
+          </span>
         </div>
       </div>
     );
@@ -265,7 +272,7 @@ class NotebookView {
       if (!editor) return;
       editor.setActiveCell(target);
       this.requestFrame(() => {
-        const view = this.cellViews.get(cellsArray[target]?.id);
+        const view = this.getCellView(cellsArray[target]?.id);
         if (!view) return;
         view.focus();
         if (view.editor) {
@@ -280,12 +287,13 @@ class NotebookView {
       requestFrame: (callback) => this.requestFrame(callback),
       index,
       active: index === activeCellIndex,
-      selected: this.selectedCells.has(index),
+      selected: this.showSelection && this.selectedCells.has(index),
       mode: this.mode,
       editor,
       notebookView: this,
       notebookLanguage,
       cellSourceRevision: cell.sourceRevision || 0,
+      deferContent: cellsArray.length >= DEFERRED_CELL_THRESHOLD && index !== activeCellIndex,
       onCellSelect: (event) => this.handleCellSelect(index, event),
       onFocus: () => editor && editor.setActiveCell(index),
       onSourceChange: (source) => editor && editor.updateCellSource(index, source),
@@ -330,8 +338,48 @@ class NotebookView {
     return views;
   }
 
+  getCellView(cellId) {
+    return this.refs[`cell-${cellId}`];
+  }
+
+  getCellIndex(cellId) {
+    const { cells, editor } = this.props;
+    return (
+      editor?.document?.getCellIndexById?.(cellId) ??
+      cells?.findIndex((cell) => cell.id === cellId) ??
+      -1
+    );
+  }
+
   get cellsContainer() {
     return this.refs.cellsContainer || null;
+  }
+
+  observeCellViewport() {
+    this.cellViewport?.disconnect();
+    const container = this.cellsContainer;
+    if (!container) return;
+    const window = container.ownerDocument.defaultView;
+    const observer = new window.IntersectionObserver(
+      (entries) => {
+        if (this.destroyed || this.cellViewport !== observer) return;
+        for (const entry of entries) {
+          if (entry.isIntersecting) this.deferredCells.get(entry.target)?.materialize();
+        }
+      },
+      { root: container, rootMargin: "400px 0px" },
+    );
+    this.cellViewport = observer;
+    for (const element of this.deferredCells.keys()) observer.observe(element);
+  }
+
+  deferCell(cellView) {
+    this.deferredCells.set(cellView.element, cellView);
+    this.cellViewport?.observe(cellView.element);
+  }
+
+  stopDeferringCell(cellView) {
+    if (this.deferredCells.delete(cellView.element)) this.cellViewport?.unobserve(cellView.element);
   }
 
   handleScroll = () => {
@@ -342,6 +390,10 @@ class NotebookView {
 
   // Tooltips and the container listeners attach to elements the diff keeps, so
   // each is registered once for the element it is on.
+  writeAfterUpdate() {
+    if (this.showSelection) this.updateSelectionStyles();
+  }
+
   readAfterUpdate() {
     for (const entry of this.commandButtons()) {
       if (!entry) continue;
@@ -377,6 +429,7 @@ class NotebookView {
       });
       this.applyScrollPastEnd();
       if (this._resizeObserver) this._resizeObserver.observe(container, { box: "border-box" });
+      this.observeCellViewport();
       this.setupCellDragAndDrop();
     }
   }
@@ -523,7 +576,7 @@ class NotebookView {
     const directElement = event.target?.closest?.(".jupyter-cell");
     if (directElement && this.cellsContainer.contains(directElement)) {
       const cellId = directElement.getAttribute("data-cell-id");
-      const cellIndex = cells.findIndex((cell) => cell.id === cellId);
+      const cellIndex = this.getCellIndex(cellId);
       if (cellIndex >= 0) {
         const rect = directElement.getBoundingClientRect();
         const after = event.clientY >= rect.top + rect.height / 2;
@@ -535,7 +588,7 @@ class NotebookView {
       .map((cell, index) => ({
         index,
         cellId: cell.id,
-        element: this.cellViews.get(cell.id)?.element,
+        element: this.getCellView(cell.id)?.element,
       }))
       .filter((entry) => entry.element && this.cellsContainer.contains(entry.element));
     if (entries.length === 0) return null;
@@ -560,7 +613,7 @@ class NotebookView {
     const indicatorPosition = boundaryIndex < cells.length ? "above" : "below";
     const indicatorCellId =
       boundaryIndex < cells.length ? cells[boundaryIndex].id : cells[cells.length - 1].id;
-    const element = this.cellViews.get(indicatorCellId)?.element || null;
+    const element = this.getCellView(indicatorCellId)?.element || null;
     return {
       boundaryIndex,
       indicatorCellId,
@@ -588,9 +641,10 @@ class NotebookView {
   }
 
   clearCellDropIndicator() {
-    this.cellViews
-      .get(this._dropIndicatorCellId)
-      ?.element?.classList.remove("drop-above", "drop-below");
+    this.getCellView(this._dropIndicatorCellId)?.element?.classList.remove(
+      "drop-above",
+      "drop-below",
+    );
     this._dropIndicatorElement?.classList.remove("drop-above", "drop-below");
     this._dropIndicatorCellId = null;
     this._dropIndicatorPosition = null;
@@ -653,7 +707,7 @@ class NotebookView {
     this.draggingCellId = payload.primaryCellId;
     this.draggingCellIds = new Set(payload.cellIds);
     for (const cellId of payload.cellIds) {
-      this.cellViews.get(cellId)?.element?.classList.add("dragging");
+      this.getCellView(cellId)?.element?.classList.add("dragging");
     }
   }
 
@@ -729,30 +783,40 @@ class NotebookView {
   }
 
   update(props) {
-    const nextCells = props.cells || this.props.cells || [];
-    const nextCellIds = new Set(nextCells.map((cell) => cell.id));
-    if (
-      this.draggingCellIds.size > 0 &&
-      Array.from(this.draggingCellIds).some((cellId) => !nextCellIds.has(cellId))
-    ) {
-      this.finishCellDrag();
-    } else if (this._dropIndicatorCellId && !nextCellIds.has(this._dropIndicatorCellId)) {
-      this.clearCellDropIndicator();
-    }
     this.props = { ...this.props, ...props };
+    if (this.draggingCellIds.size || this._dropIndicatorCellId) {
+      const nextCellIds = new Set(this.props.cells?.map((cell) => cell.id));
+      if (Array.from(this.draggingCellIds).some((cellId) => !nextCellIds.has(cellId))) {
+        this.finishCellDrag();
+      } else if (this._dropIndicatorCellId && !nextCellIds.has(this._dropIndicatorCellId)) {
+        this.clearCellDropIndicator();
+      }
+    }
     return etch.update(this);
   }
 
-  updateCells(cellIds) {
+  setActiveCellIndex(index) {
+    const cells = this.props.cells;
+    const previous = this.props.activeCellIndex;
+    if (!cells || previous === index) return;
+    this.props.activeCellIndex = index;
+    const ids = [cells[previous]?.id, cells[index]?.id];
+    return this.updateCells(ids, { sync: true });
+  }
+
+  updateCells(cellIds, options) {
     const cells = this.props.cells || [];
     const notebookLanguage = getNotebookLanguage(this.props.editor?.document?.metadata || {});
-    const indexes = new Map(cells.map((cell, index) => [cell.id, index]));
     const updates = [];
     for (const cellId of new Set(cellIds || [])) {
-      const index = indexes.get(cellId);
-      const cellView = this.cellViews.get(cellId);
-      if (index === undefined || !cellView) continue;
-      updates.push(cellView.update(this.cellProps(cells[index], index, cells, notebookLanguage)));
+      if (cellId == null) continue;
+      const index = this.getCellIndex(cellId);
+      const cellView = this.getCellView(cellId);
+      if (!cells[index] || !cellView) continue;
+      const cell = cells[index];
+      if (index === this.props.activeCellIndex)
+        this.refs.cellTypeSelect?.controller.setValue(cell.type);
+      updates.push(cellView.update(this.cellProps(cell, index, cells, notebookLanguage), options));
     }
     return Promise.all(updates);
   }
@@ -776,9 +840,11 @@ class NotebookView {
       this.props.editor?.flushPendingCellSourceChanges?.();
       this.mode = mode;
 
-      // The classes, the indicator and the cells all read the mode, and the
-      // keymap selectors need the class immediately.
-      etch.updateSync(this);
+      // Keymap selectors and focus must see the new mode in this event.
+      this.element.classList.toggle("edit-mode", mode === "edit");
+      this.element.classList.toggle("command-mode", mode !== "edit");
+      this.refs.modeIndicator.textContent = mode === "edit" ? "Edit" : "Command";
+      this.updateCells([this.props.cells?.[this.props.activeCellIndex]?.id], { sync: true });
       this.props.editor?.notifyNotebookModeChange?.();
     }
   }
@@ -789,7 +855,7 @@ class NotebookView {
     const index = this.props.activeCellIndex;
     const cells = this.props.cells;
     if (cells && cells[index]) {
-      const cellView = this.cellViews.get(cells[index].id);
+      const cellView = this.getCellView(cells[index].id);
       if (cellView && cellView.editor) {
         this.scrollToCursor(index, cellView.editor, { mode: "nearest" });
       }
@@ -803,7 +869,7 @@ class NotebookView {
     const activeCellIndex = this.props.activeCellIndex;
     const cells = this.props.cells;
     if (cells && cells[activeCellIndex]) {
-      const cellView = this.cellViews.get(cells[activeCellIndex].id);
+      const cellView = this.getCellView(cells[activeCellIndex].id);
       if (cellView) {
         // Temporarily disable mode switching from focus events
         this._skipFocusModeChange = true;
@@ -1005,20 +1071,24 @@ class NotebookView {
     }
     this.selectedCells = validSelection;
 
-    cells.forEach((cell, index) => {
-      const cellView = this.cellViews.get(cell.id);
-      if (cellView && cellView.element) {
-        if (this.selectedCells.has(index)) {
-          cellView.element.classList.add("selected");
-        } else {
-          cellView.element.classList.remove("selected");
-        }
-      }
-    });
+    this.showSelection = true;
+    this.updateSelectionStyles();
 
     for (const callback of this.selectionCallbacks) {
       callback(this.getSelectedCells());
     }
+  }
+
+  updateSelectionStyles() {
+    const cells = this.props.cells || [];
+    const next = new Set(
+      Array.from(this.selectedCells, (index) => cells[index]?.id).filter(Boolean),
+    );
+    for (const id of this.styledSelection) {
+      if (!next.has(id)) this.getCellView(id)?.element?.classList.remove("selected");
+    }
+    for (const id of next) this.getCellView(id)?.element?.classList.add("selected");
+    this.styledSelection = next;
   }
 
   /**
@@ -1026,15 +1096,10 @@ class NotebookView {
    * Used when notebook loses focus
    */
   _hideSelectionClasses() {
-    const { cells } = this.props;
-    if (!cells) return;
-
-    cells.forEach((cell) => {
-      const cellView = this.cellViews.get(cell.id);
-      if (cellView && cellView.element) {
-        cellView.element.classList.remove("selected");
-      }
-    });
+    this.showSelection = false;
+    for (const id of this.styledSelection)
+      this.getCellView(id)?.element?.classList.remove("selected");
+    this.styledSelection.clear();
   }
 
   /**
@@ -1118,7 +1183,7 @@ class NotebookView {
     if (!this.cellsContainer) return;
     const cells = this.props.cells;
     if (!cells || !cells[index]) return;
-    const cellView = this.cellViews.get(cells[index].id);
+    const cellView = this.getCellView(cells[index].id);
     if (!cellView || !cellView.editorElement) return;
 
     const lineHeight = editor.getLineHeightInPixels();
@@ -1167,8 +1232,9 @@ class NotebookView {
   scrollToCell(index) {
     const cells = this.props.cells;
     if (!cells || !cells[index] || !this.cellsContainer) return;
-    const cellView = this.cellViews.get(cells[index].id);
+    const cellView = this.getCellView(cells[index].id);
     if (!cellView || !cellView.element) return;
+    if (cellView.contentDeferred) cellView.materialize();
     this.revealScrollbars();
 
     const container = this.cellsContainer;
@@ -1244,6 +1310,9 @@ class NotebookView {
 
   destroy() {
     this.destroyed = true;
+    this.cellViewport?.disconnect();
+    this.cellViewport = null;
+    this.deferredCells.clear();
     cancelFocusReset(this._focusResetTimer);
     if (this._tooltips) {
       this._tooltips.dispose();

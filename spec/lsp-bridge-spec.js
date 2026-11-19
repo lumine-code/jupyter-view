@@ -259,6 +259,43 @@ describe("the language-server bridge", () => {
     expect(ide.opened[0].updates[0][0].scopeName).toBe("source.python.ipy");
   });
 
+  it("reconciles model-only text changes and lets live buffers synchronize their own edits", async () => {
+    const document = fakeDocument({
+      filePath: "C:\\proj\\nb.ipynb",
+      cells: [
+        { id: "live", type: "code", source: "x" },
+        { id: "deferred", type: "code", source: "y" },
+      ],
+    });
+    const host = fakeHost([document]);
+    const cellEditor = { getGrammar: () => ({ scopeName: "source.python" }) };
+    host.getNotebookEditors = () => [
+      {
+        getCellEditorById: (id) => (id === "live" ? cellEditor : null),
+      },
+    ];
+    const ide = fakeIde();
+    ide.supportsNotebookTextSources = true;
+    manager = new LspBridgeManager(ide, host);
+    const bridge = ide.opened[0];
+
+    const change = (id) =>
+      document.emitter.emit("did-change", {
+        affectsSource: true,
+        reason: "cell-source",
+        cellIds: [id],
+      });
+    change("live");
+    await flushFrame();
+    expect(bridge.updates).toEqual([]);
+
+    document.cells[1].source = "changed";
+    change("deferred");
+    await flushFrame();
+    expect(bridge.updates.length).toBe(1);
+    expect(bridge.updates[0][1].textSource.toString()).toBe("changed");
+  });
+
   it("nudges the CLI linters only when the attach settles on a changed adapter set", async () => {
     const document = fakeDocument({ filePath: "C:\\proj\\nb.ipynb", cells: [] });
     const host = fakeHost([document]);

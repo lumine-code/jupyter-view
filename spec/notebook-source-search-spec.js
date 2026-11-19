@@ -28,7 +28,7 @@ describe("snapshot notebook search", () => {
       setActiveCell(index) {
         this.activeCellIndex = index;
       },
-      view: { cellViews, setMode() {}, scrollToCell() {} },
+      view: { cellViews, getCellView: (id) => cellViews.get(id), setMode() {}, scrollToCell() {} },
     };
     adapter = new (require("../lib/notebook-search"))(notebook);
     return notebook;

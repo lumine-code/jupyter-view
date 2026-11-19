@@ -1,10 +1,11 @@
 describe("notebook kernel output accumulation budgets", () => {
-  let cells, budget, check;
+  let cells, budget, check, accounting;
   const output = (text) => ({ output_type: "stream", name: "stdout", text });
   beforeEach(() => {
     cells = [];
     budget = require("../lib/output-budget");
     check = budget.assertOutput;
+    accounting = new budget.OutputBudget(() => cells);
     spyOn(lumine.notifications, "addError");
   });
   afterEach(() => {
@@ -16,8 +17,9 @@ describe("notebook kernel output accumulation budgets", () => {
       source: "",
       outputs: [],
     });
-    value.outputBudgetCells = () => cells;
     cells.push(value);
+    value.outputBudget = accounting;
+    accounting.add(value);
     return value;
   }
 
@@ -65,5 +67,40 @@ describe("notebook kernel output accumulation budgets", () => {
     expect(second.outputs[0].text).toBe("y".repeat(40));
     expect(third.outputs).toEqual([]);
     expect(third.outputIncomplete).toBeTruthy();
+  });
+
+  it("accounts for stream merges and clears without revisiting earlier rich data", () => {
+    let visits = 0;
+    const rich = {
+      output_type: "display_data",
+      data: {
+        get "text/plain"() {
+          visits++;
+          return "earlier";
+        },
+      },
+    };
+    const first = cell(),
+      second = cell();
+    const firstCost = budget.measure(rich);
+    visits = 0;
+    expect(first.addOutput(rich)).toBe(true);
+    expect(second.addOutput(output("abc"))).toBe(true);
+    expect(second.addOutput(output("\rXY"))).toBe(true);
+    expect(visits).toBe(1);
+    expect(accounting.retained()).toEqual({
+      units: firstCost + budget.measure(output("XYc")),
+      count: 2,
+    });
+
+    second.applyClearOutput(true);
+    expect(second.addOutput(output("new"))).toBe(true);
+    expect(accounting.retained()).toEqual({
+      units: firstCost + budget.measure(output("new")),
+      count: 2,
+    });
+    first.clearOutputs();
+    expect(accounting.retained()).toEqual({ units: budget.measure(output("new")), count: 1 });
+    expect(visits).toBe(1);
   });
 });

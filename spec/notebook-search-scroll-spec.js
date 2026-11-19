@@ -20,7 +20,7 @@ describe("notebook search scrolling", () => {
       view: {
         setMode() {},
         scrollToCell() {},
-        cellViews: new Map([["cell", cellView]]),
+        getCellView: () => cellView,
       },
     };
     adapter.matches = [{ cellIndex: 0, start: 1, end: 2 }];

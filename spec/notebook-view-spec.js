@@ -214,6 +214,31 @@ describe("notebook view", () => {
     expect(view.cellViews.get("a").props.cell.id).toBe("a");
   });
 
+  it("defers offscreen editors and output in large notebooks until the viewport needs them", async () => {
+    view = mount(
+      Array.from({ length: 100 }, (_, i) =>
+        cell(String(i), {
+          source: "x\n".repeat(64),
+          outputs: [{ output_type: "stream", name: "stdout", text: `Output ${i}` }],
+        }),
+      ),
+    );
+    const container = view.cellsContainer;
+    container.style.cssText = "position: relative; overflow: auto; height: 200px; width: 400px";
+    jasmine.attachToDOM(view.element);
+    const active = view.getCellView("0");
+    const offscreen = view.getCellView("90");
+    expect(active.editor).not.toBeNull();
+    expect(offscreen.editor).toBeNull();
+    expect(offscreen.outputView).toBeNull();
+
+    container.scrollTop = offscreen.element.offsetTop;
+    await globalThis.conditionPromise(() => Boolean(offscreen.editor));
+    expect(offscreen.outputView.element.textContent).toContain("Output 90");
+    view.setActiveCellIndex(99);
+    expect(view.getCellView("99").editor).not.toBeNull();
+  });
+
   it("destroys its cell views with itself", () => {
     view = mount([cell("a")]);
     const editor = view.cellViews.get("a").editor;

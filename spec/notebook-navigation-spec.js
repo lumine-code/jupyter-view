@@ -12,6 +12,7 @@ describe("notebook navigation adapter", () => {
     editor.emitter = new Emitter();
     editor.activeCellIndex = 4;
     editor.document = {
+      getCellIndexById: (id) => editor.document.cells.findIndex((cell) => cell.id === id),
       cells: [
         { id: "preamble", type: "markdown", source: "Introduction without a heading." },
         { id: "code", type: "code", source: "print('Introduction')" },
@@ -26,20 +27,14 @@ describe("notebook navigation adapter", () => {
       cellsContainer: {
         scrollTop: 0,
         getBoundingClientRect: () => ({ top: 0, bottom: 100 }),
+        children: editor.document.cells.map((cell, index) => ({
+          getAttribute: () => cell.id,
+          getBoundingClientRect: () => ({
+            top: bounds[index] - editor.view.cellsContainer.scrollTop,
+            bottom: bounds[index + 1] - editor.view.cellsContainer.scrollTop,
+          }),
+        })),
       },
-      cellViews: new Map(
-        editor.document.cells.map((cell, index) => [
-          cell.id,
-          {
-            element: {
-              getBoundingClientRect: () => ({
-                top: bounds[index] - editor.view.cellsContainer.scrollTop,
-                bottom: bounds[index + 1] - editor.view.cellsContainer.scrollTop,
-              }),
-            },
-          },
-        ]),
-      ),
       onDidScroll: (listener) => events.on("scroll", listener),
     };
     let frameId = 0;

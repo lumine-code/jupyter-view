@@ -56,7 +56,7 @@ describe("notebook scrollmap document geometry", () => {
     const map = Object.create(NotebookScrollmap.prototype);
     map.editor = {
       document: { cells: [{ id: "cell" }] },
-      view: { cellsContainer: container, cellViews: new Map([["cell", { element: cell }]]) },
+      view: { cellsContainer: container, getCellView: () => ({ element: cell }) },
     };
     map.headers = [
       { cellIndex: 0, level: 1 },
