@@ -29,6 +29,7 @@
     "language-shellscript",
     "language-text",
     "linter",
+    "navigation-panel",
     "spell-check"
   ],
   "main": "./lib/main",

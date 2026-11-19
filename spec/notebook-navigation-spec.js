@@ -78,26 +78,25 @@ describe("notebook navigation adapter", () => {
 
   it("repeats the start boundary for source scrolling with unchanged outline state", () => {
     flush();
-    const headers = callback.calls.mostRecent().args[0];
     scrollTo(20);
     scrollTo(40);
     expect(callback.calls.count()).toBe(3);
     expect(callback.calls.mostRecent().args).toEqual([
-      headers,
-      { instant: false, scrollBoundary: "start" },
+      null,
+      { instant: false, scrollBoundary: "start", stateChanges: [] },
     ]);
   });
 
   it("clears the boundary when the first heading appears and keeps later gaps unbounded", () => {
     flush();
+    const headers = callback.calls.mostRecent().args[0];
     scrollTo(1050);
     expect(callback.calls.mostRecent().args[1].scrollBoundary).toBeNull();
-    expect(callback.calls.mostRecent().args[0][0].visibility).toBe(1);
+    expect(callback.calls.mostRecent().args[0]).toBeNull();
+    expect(headers[0].visibility).toBe(1);
     scrollTo(1200);
     expect(callback.calls.mostRecent().args[1].scrollBoundary).toBeNull();
-    expect(callback.calls.mostRecent().args[0].every((header) => header.visibility === 0)).toBe(
-      true,
-    );
+    expect(headers.every((header) => header.visibility === 0)).toBe(true);
     scrollTo(2200);
     expect(callback.calls.mostRecent().args[1].scrollBoundary).toBeNull();
     callback.calls.reset();
