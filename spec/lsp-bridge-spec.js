@@ -215,6 +215,31 @@ describe("the language-server bridge", () => {
     expect(result).toBe(revelation);
   });
 
+  it("supplies a notebook code editor on demand for workspace edits without revealing it", () => {
+    const document = fakeDocument({
+      filePath: "C:\\proj\\nb.ipynb",
+      cells: [
+        { id: "note", type: "markdown", source: "# Introduction" },
+        { id: "code", type: "code", source: "x" },
+      ],
+    });
+    const host = fakeHost([document]);
+    const editor = {};
+    const getCellEditor = jasmine.createSpy("open cell editor").and.returnValue(editor);
+    const revealCell = jasmine.createSpy("reveal cell");
+    host.getNotebookEditors = () => [{ getCellEditor, revealCell }];
+    const ide = fakeIde();
+    manager = new LspBridgeManager(ide, host);
+    const { editorForCell } = ide.opened[0].descriptor;
+
+    expect(getCellEditor).not.toHaveBeenCalled();
+    expect(editorForCell("note")).toBeNull();
+    expect(editorForCell("missing")).toBeNull();
+    expect(editorForCell("code")).toBe(editor);
+    expect(getCellEditor).toHaveBeenCalledOnceWith(2);
+    expect(revealCell).not.toHaveBeenCalled();
+  });
+
   it("syncs the cells a restored document loads after the bridge opened", async () => {
     // A restored document registers before its async load completes; the
     // bridge opens against an empty cell list and must hear the load.
