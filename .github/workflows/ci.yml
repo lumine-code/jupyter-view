@@ -68,9 +68,6 @@ jobs:
     env:
       LUMINE_JASMINE_REPORTER: list
       LUMINE_DISABLE_SHELLING_OUT_FOR_ENVIRONMENT: "true"
-      TEMP: ${{ github.workspace }}/jupyter-view-spec-tmp
-      TMP: ${{ github.workspace }}/jupyter-view-spec-tmp
-      TMPDIR: ${{ github.workspace }}/jupyter-view-spec-tmp
     steps:
       - uses: actions/checkout@v7
         with:
@@ -105,7 +102,18 @@ jobs:
           cache: npm
           cache-dependency-path: lumine/package-lock.json
       - name: Create the private temporary directory
-        run: mkdir -p "$TEMP"
+        # Native Windows tools need a temporary path with native separators.
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const path = require("node:path");
+          const directory = path.resolve(process.env.GITHUB_WORKSPACE, "jupyter-view-spec-tmp");
+          fs.mkdirSync(directory, { recursive: true });
+          const environment = ["TEMP", "TMP", "TMPDIR"]
+            .map((name) => `${name}=${directory}\n`)
+            .join("");
+          fs.appendFileSync(process.env.GITHUB_ENV, environment);
+          NODE
       - name: Install Linux build and headless-display dependencies
         if: runner.os == 'Linux'
         run: |
