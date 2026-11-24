@@ -36,6 +36,8 @@ describe("notebook change tracking", () => {
   }
 
   async function buildFileDocument() {
+    // Disk fingerprinting yields to the browser clock when a slice runs long.
+    jasmine.useRealClock();
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), "jupyter-file-state-"));
     const filePath = path.join(directory, "notebook.ipynb");
     const notebook = {
@@ -355,6 +357,7 @@ describe("notebook change tracking", () => {
   });
 
   it("restores the source projection of a file-backed notebook", async () => {
+    jasmine.useRealClock();
     const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "jupyter-view-source-"));
     const filePath = path.join(tempDirectory, "restored-notebook.ipynb");
     fs.writeFileSync(
