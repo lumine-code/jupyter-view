@@ -220,7 +220,8 @@ class NotebookView {
             entry ? (
               <button
                 key={entry[0]}
-                className="btn btn-sm jupyter-action-button"
+                type="button"
+                className="btn btn-sm icon-button jupyter-action-button"
                 attributes={{ "aria-label": entry[2] }}
                 ref={`command-${entry[0]}`}
                 onClick={this.dispatchCommand(entry[0])}
@@ -236,7 +237,10 @@ class NotebookView {
             entry ? (
               <button
                 key={entry[3]}
-                className="btn btn-sm jupyter-action-button"
+                type="button"
+                className={`btn btn-sm icon-button jupyter-action-button${
+                  entry[0] === "clear" || entry[0] === "clear-all" ? " icon-button-no-scale" : ""
+                }`}
                 attributes={{ "aria-label": entry[1] }}
                 ref={`editor-${entry[3]}`}
                 onClick={this.callEditor(entry[3])}
