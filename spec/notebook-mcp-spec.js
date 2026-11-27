@@ -513,18 +513,28 @@ describe("live notebook MCP control", () => {
   });
 
   it("reports timeout and close and advertises explicit MCP schemas", async () => {
+    // Use an idle document for the timeout so deferred editor updates cannot
+    // legitimately win the wait before its timer runs.
+    const idle = await registry.createUntitledDocument();
+    const read = await control.getNotebookSnapshot({ notebookId: idle.id });
+    const timeout = await control.waitForNotebookChange({
+      notebookId: idle.id,
+      afterRevision: read.changeRevision,
+      timeoutMs: 0,
+    });
+    expect(timeout.kind).toBe("timeout");
+    expect(timeout.changed).toBe(false);
+    idle.destroy();
+
     const { notebookId, editor, document } = await create();
-    const read = await control.getNotebookSnapshot({ notebookId });
-    expect(
-      (
-        await control.waitForNotebookChange({
-          notebookId,
-          afterRevision: read.changeRevision,
-          timeoutMs: 0,
-        })
-      ).changed,
-    ).toBe(false);
-    const close = control.waitForNotebookChange({ notebookId, afterRevision: read.changeRevision });
+    const current = control
+      .listNotebooks()
+      .notebooks.find((entry) => entry.notebookId === notebookId);
+    const close = control.waitForNotebookChange({
+      notebookId,
+      afterRevision: current.changeRevision,
+    });
+    expect(control.waits.size).toBe(1);
     editor.destroy();
     expect(document.isDestroyed()).toBe(true);
     expect(control.records.has(notebookId)).toBe(false);
