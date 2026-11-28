@@ -270,7 +270,7 @@ class CellView {
         {isCode ? (
           <button
             type="button"
-            className="btn btn-xs icon-button jupyter-action-button"
+            className="btn btn-xs jupyter-action-button native-key-bindings"
             attributes={{ "aria-label": "Run Cell" }}
             ref="runButton"
             onClick={this.runCell}
@@ -281,7 +281,7 @@ class CellView {
         {isCode ? (
           <button
             type="button"
-            className="btn btn-xs icon-button icon-button-no-scale jupyter-action-button"
+            className="btn btn-xs jupyter-action-button native-key-bindings"
             attributes={{ "aria-label": "Clear Output" }}
             ref="clearButton"
             onClick={this.clearOutput}
@@ -291,7 +291,7 @@ class CellView {
         ) : null}
         <button
           type="button"
-          className="btn btn-xs icon-button icon-button-no-scale jupyter-action-button"
+          className="btn btn-xs jupyter-action-button native-key-bindings"
           attributes={{ "aria-label": "Delete Cell" }}
           ref="deleteButton"
           onClick={this.deleteCell}

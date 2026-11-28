@@ -1,9 +1,9 @@
 {
   "title": "jupyter-view",
   "description": "Basedpyright underlines a type error inside a notebook cell and explains it in a hover.",
-  "recordedOn": "2026-11-03",
-  "sourceRevision": "e8ac004baeebfd842a57ad891329be23de1e748e",
-  "themeSourceRevision": "e4e4b93ad9f726aee473242787587188cd8c4bf7",
+  "recordedOn": "2026-11-28",
+  "sourceRevision": "154faa4c8cfce0469e46adb328855a7e321224a6",
+  "themeSourceRevision": "2302efb349b261bfa8427e96c00d38a90ff8f364",
   "mode": "normal",
   "fontSettings": "default",
   "scenario": "demo.js",
@@ -11,8 +11,8 @@
   "environment": {
     "platform": "win32",
     "arch": "x64",
-    "electron": "45.2.1",
-    "chrome": "156.0.8078.75",
+    "electron": "45.5.0",
+    "chrome": "156.0.8078.109",
     "devicePixelRatio": 1,
     "locale": "en-GB",
     "fontFamily": "Fira Code, Menlo, DejaVu Sans Mono, Consolas, monospace",
@@ -21,327 +21,72 @@
   },
   "viewport": { "width": 1200, "height": 950 },
   "cornerRadius": 10,
-  "privacy": { "version": 1, "location": "neutral", "textChecked": true },
+  "privacy": { "version": 1, "location": "workspace-scratch", "textChecked": true },
   "sources": {
     "editor": {
-      "revision": "3c7d1226013c1bacce6ee09a0b1baa5a2a15ca5b",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      "revision": "3cdc594dfd5fadf7a8ed8a0fb52b1a136c348a3c",
+      "dirty": true,
+      "workingTreeHash": "aa0ef368575b505f538d18a75760bd6d02511034e95643ae0fe4629383a05cc1"
     },
     "package": {
-      "revision": "e8ac004baeebfd842a57ad891329be23de1e748e",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      "revision": "154faa4c8cfce0469e46adb328855a7e321224a6",
+      "dirty": true,
+      "workingTreeHash": "bd990562f38f1833ebdcdf5e5b29a89db93096a56cbc8681cb889199f6b80425"
     },
     "jupyter-view": {
-      "revision": "e8ac004baeebfd842a57ad891329be23de1e748e",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "about": {
-      "revision": "53beb93bfcceab8a9557827c71bc53bb14ad02b7",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "background-tips": {
-      "revision": "823666122576fe696d4067d8bf06c518ab85411b",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "breadcrumbs": {
-      "revision": "f949ede68654d06e528616b727809fd5eb916121",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "command-palette": {
-      "revision": "c9f74e3a467565cfcabc0d89dc7611bd1c15d5e3",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "deprecation-cop": {
-      "revision": "54a34519877c01b75402ba01214cbd3094a1973d",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "dev-live-reload": {
-      "revision": "02d1ec178f6a3ddcbe84ec6a4841e40b0359e849",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      "revision": "154faa4c8cfce0469e46adb328855a7e321224a6",
+      "dirty": true,
+      "workingTreeHash": "bd990562f38f1833ebdcdf5e5b29a89db93096a56cbc8681cb889199f6b80425"
     },
     "documentation-view": {
-      "revision": "62dacc63d6d939701fd6a1fbf18854a01a2ade8c",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "encoding-selector": {
-      "revision": "df7a83b7b7b646a2e16297751841dd39557ad0d1",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "git-diff": {
-      "revision": "19c1fdbd22e87695528c32c16ecbb92d98f64b61",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "go-to-line": {
-      "revision": "85c9175fe7eeb1288f5b52daf0ea678447dc9f80",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "grammar-selector": {
-      "revision": "3d8eaa7ed10234ea9e580d7644fa52d17f1af5b9",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      "revision": "d4bcc1256c5fda98a6bc175b292e4c05c0240f71",
+      "dirty": true,
+      "workingTreeHash": "48363f954650a094ed47f317ab96160bc7dc4782e4321d0cab118780b90b1a13"
     },
     "hover": {
-      "revision": "8c3e5a0fe70aff4a5988488e6a96c9d3aa9f71b5",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      "revision": "a004ff146dfbbd65ce16c308097220369651bacd",
+      "dirty": true,
+      "workingTreeHash": "6ee7ef3a8bb08af6900b2305ae184f7eb4ffa7a17f9b8d635d2bb418085373af"
     },
     "ide": {
-      "revision": "1dfea25a15dbf2cfc788d89ea65b1322ec80ae74",
+      "revision": "1ea5bf1ba7701b29c888e92e15ae04889eb42428",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "ide-basedpyright": {
-      "revision": "5b750667fa327100bdd9687fdd95a10e29322f71",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "incompatible-packages": {
-      "revision": "da9e3d798e530e2d1d68e1a04b1330272ad3bce5",
+      "revision": "c485ce8ad2d2362ac86364294868e23c9abaf268",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "jupyter-cells": {
-      "revision": "b7b6f42ae7608df52789e14caf7a691a40e8b2ca",
+      "revision": "6f7842d65a3a777542f173424ad1392bd7dda261",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "jupyter-repl": {
-      "revision": "cda137718491bb79945928ce283abe8e306e155e",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "keybinding-resolver": {
-      "revision": "5180db6bd3d3e4e8332d558001811b96de4c5349",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-c": {
-      "revision": "4878cc2244ea407e157678091d210a1e17e15e73",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-css": {
-      "revision": "b6bbd67ece85a5f014c677f562cf1c0a106c8c1b",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-csv": {
-      "revision": "6a75738680e0ad38e3a3f18b44155be2b931b542",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-diff": {
-      "revision": "30305b05c36ca2bf2ec40a92f6ebeb1d353346ed",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-gfm": {
-      "revision": "e0ebb45881e3e073da93bb7d81ec09a98f731310",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-git": {
-      "revision": "cec1fa2efcc0687af43b2825e5c1936aa24bcd07",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-html": {
-      "revision": "2c9da18c754594134f9f4379c6765cb427f84f71",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-hyperlink": {
-      "revision": "441ebfd5701061f7efbd9c813ed7ac1082fb37a4",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-ipython": {
-      "revision": "ea6dd87af10895ae0e80295ce982ee42693d4fe9",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-javascript": {
-      "revision": "190757bc82639a522af62b99554a162e3fd87c80",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-json": {
-      "revision": "9295231eed44c7d9feca42f8ab8aeae59cfd4461",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-log": {
-      "revision": "bb21792faaace483675c131a5bafed77e03e11de",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-powershell": {
-      "revision": "c446a11f7d9d8042993183c91fccbed77d28a756",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      "revision": "0137b2c86e310b2b7ae98cfee93aed1b93c055d8",
+      "dirty": true,
+      "workingTreeHash": "da9c2d9d232009791998bee0e74801cd48012a614f670ab6a14a5521c36ed36c"
     },
     "language-python": {
-      "revision": "4379f5a4842b1f8fd0c00e3854222dffa376f902",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-regex": {
-      "revision": "7d2bbe2a943eeca302a0795bb52868ac60222664",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-shellscript": {
-      "revision": "45355daac8855f6df151cb9c5c93721239972266",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-source": {
-      "revision": "a36f45fb53b6f8f9db50e5b72b9cc3202ef11012",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-sql": {
-      "revision": "d8342cd7493b3b9178750ea354ea36bb22caebb8",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-text": {
-      "revision": "0b3e946513372b17585515ac2699d622c2910ec5",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-todo": {
-      "revision": "acec0cb8b4b0999c420dda686a2b21fbfd03bb36",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-toml": {
-      "revision": "5e0ce2a69180830ca4a00bcee2349b0bbc845479",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-typescript": {
-      "revision": "d39df2c75b75ca6cf7f582b5f01f1ed5ca3071ac",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-xml": {
-      "revision": "5c22234dbaf36c1f7fac500f78464b2b73a5dde0",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "language-yaml": {
-      "revision": "344de377a8e6a7156b976296db2dfd975ace8666",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "launcher": {
-      "revision": "14e2f0a10cb8477d909ae0150e4583af36e0d7e2",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "line-ending": {
-      "revision": "3ae4bcfd760483a6755b5a980b00ea39feb5fd94",
+      "revision": "eec73356069a77ac8a5995f4cff39d379fc82692",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "linter": {
-      "revision": "c004f04a57b73d1a93f64f2cea0262a73966890e",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "lumine-updater": {
-      "revision": "bbfa749a79d7c91b14b57a36016890ab910feaae",
+      "revision": "5e014dacba09679d841731c0a505518326784fd2",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "marker": {
-      "revision": "3f687471fc88f28e1fcb391db63b241aa0e74bed",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "metadata": {
-      "revision": "6107155100c962d1be9f3faed943f1d04e925e22",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "notifications": {
-      "revision": "79bdf44154b60859d771085b55e353f4390d1878",
+      "revision": "cafb4c052fc295b6a4e8dfd56acde8bf4fa14179",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "one-theme": {
-      "revision": "e4e4b93ad9f726aee473242787587188cd8c4bf7",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "search-panel": {
-      "revision": "8d912cfb7bd954a0012428dbe255da1eea61a597",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "settings-view": {
-      "revision": "d8606abd03701327dd0ae9388345117cba4fb11b",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "snippets": {
-      "revision": "562ef839a63745b1df8c787d38c59ac2b3a63903",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "status-bar": {
-      "revision": "5e6282ba2948ec0cec00b78de713c52faaea437f",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "styleguide": {
-      "revision": "a23742cc0705750038ee3fdf8c42e884e54df039",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "tabs": {
-      "revision": "3322761ea405a84a91762f20de8fc6e1c34d8d6b",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "timecop": {
-      "revision": "a78471a11d9b3e36f28368d109a4a303fc0afe29",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "title-bar": {
-      "revision": "36cefdff27dd0647160001ce78999a98eb1c1548",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "tree-view": {
-      "revision": "c0089b9b525c932019976241b3a89665806350d2",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "whitespace": {
-      "revision": "264de99c14fb09ea8e9df213833941371495b311",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "window-title": {
-      "revision": "a56f6cfb8b5411fac91435f4e4498ba1e5d89918",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      "revision": "2302efb349b261bfa8427e96c00d38a90ff8f364",
+      "dirty": true,
+      "workingTreeHash": "b6ee5bef3d3236a2db8c1f2429210f44e2fdc70d7ebe0b3aeade945bde8d3ff5"
     }
   },
   "fixtures": [
@@ -360,7 +105,7 @@
       "label": "Basedpyright underlines a type error inside a notebook cell and explains it in a hover.",
       "width": 1200,
       "height": 950,
-      "sha256": "e710c25f5ce2c3b7ce98a7b298af0caeeb1f756392f667ae2a0e9ff0a4fd61b5"
+      "sha256": "dea976a64488afb43c1174ef39c084e54bdb366cfe03736418e1c84fc59584ef"
     }
   ]
 }
